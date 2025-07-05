@@ -16,10 +16,25 @@ export default function MenteeProfileForm() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("working: ",formData); //send to backend later
-  };
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  try {
+    const response = await fetch('http://localhost:8080/api/mentees', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to submit form');
+    }
+    const data = await response.json();
+    console.log('Works:', data);
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
 
   return (
     <form className="max-w-xl mx-auto p-6 bg-white rounded-lg shadow-md space-y-4" onSubmit={handleSubmit}>
