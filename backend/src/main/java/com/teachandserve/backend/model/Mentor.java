@@ -17,7 +17,8 @@ public class Mentor {
     private String lastName;
     private String email;
     private String phoneNumber;
-    private String expertiseArea;
+    private String dateOfBirth;
     private String bio;
+    private String experience;
+    private String linkedin;
 }
-

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/api/mentees")
 public class MenteeController {
 
@@ -15,7 +16,6 @@ public class MenteeController {
         this.menteeRepository = menteeRepository;
     }
 
-    @CrossOrigin(origins = "http://localhost:3000")
     @PostMapping
     public Mentee createMentee(@RequestBody Mentee mentee) {
         return menteeRepository.save(mentee);
