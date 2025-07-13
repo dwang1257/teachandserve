@@ -4,10 +4,10 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Data                      
-@NoArgsConstructor          
-@AllArgsConstructor         
-public class Mentee {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Mentor {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,6 +17,7 @@ public class Mentee {
     private String lastName;
     private String email;
     private String phoneNumber;
-    private String dateOfBirth;
+    private String expertiseArea;
     private String bio;
 }
+
