@@ -12,6 +12,8 @@ import CompleteProfile from './components/Profile/CompleteProfile';
 import ViewProfile from './components/Profile/ViewProfile';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import NotificationBanner from './components/Notifications/NotificationBanner';
+import MenteeProfileForm from './components/Forms/MenteeForm.tsx';
+import MentorProfileForm from './components/Forms/MentorForm.tsx';
 import './App.css';
 
 const AppRoutes = () => {
