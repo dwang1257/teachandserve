@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function LandingPage() {
   const [isVisible, setIsVisible] = useState(false);
@@ -10,9 +11,23 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200">
       {/* Navigation */}
-      <nav className="flex justify-center items-center px-8 py-6 bg-white/10 backdrop-blur-md border-b border-white/20">
+      <nav className="flex justify-between items-center px-8 py-6 bg-white/10 backdrop-blur-md border-b border-white/20">
         <div className="flex items-center space-x-3">
           <span className="text-2xl font-bold text-gray-900">Teach & Serve</span>
+        </div>
+        <div className="flex items-center space-x-4">
+          <Link
+            to="/login"
+            className="text-gray-700 hover:text-gray-900 px-4 py-2 rounded-md transition-colors"
+          >
+            Sign In
+          </Link>
+          <Link
+            to="/signup"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
+          >
+            Get Started
+          </Link>
         </div>
       </nav>
 
