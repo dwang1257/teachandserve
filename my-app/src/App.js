@@ -7,6 +7,7 @@ import Login from './components/Auth/Login';
 import Signup from './components/Auth/Signup';
 import Dashboard from './components/Dashboard/Dashboard';
 import MatchedProfiles from './components/Dashboard/MatchedProfiles';
+import Messages from './components/Messages/Messages';
 import ProfileSetup from './components/Profile/ProfileSetup';
 import CompleteProfile from './components/Profile/CompleteProfile';
 import ViewProfile from './components/Profile/ViewProfile';
@@ -51,21 +52,29 @@ const AppRoutes = () => {
             </ProtectedRoute>
           } 
         />
-        <Route 
-          path="/matches" 
+        <Route
+          path="/matches"
           element={
             <ProtectedRoute>
               <MatchedProfiles />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/dashboard" 
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <Messages />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
-          } 
+          }
         />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

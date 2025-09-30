@@ -12,54 +12,59 @@ const Header = () => {
   }
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="flex justify-between items-center h-14">
           {/* Logo/Home Button */}
-          <Link 
-            to="/" 
-            className="flex items-center space-x-3 hover:opacity-80 transition-opacity group"
+          <Link
+            to="/"
+            className="flex items-center hover:opacity-70 transition-opacity"
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform">
-              <span className="text-white font-bold text-sm">T&S</span>
-            </div>
-            <span className="text-xl font-bold text-gray-900">Teach & Serve</span>
+            <span className="text-lg font-medium text-gray-900 tracking-tight">Teach & Serve</span>
           </Link>
 
           {/* Right side - User menu or auth buttons */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-6">
             {user ? (
               <>
-                <span className="text-gray-700 text-sm">
-                  Welcome, {user.email}
+                <Link
+                  to="/messages"
+                  className="relative text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </Link>
+                <span className="text-gray-600 text-sm font-normal">
+                  {user.email}
                 </span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  user.role === 'MENTOR' 
-                    ? 'bg-blue-100 text-blue-800' 
-                    : 'bg-purple-100 text-purple-800'
+                <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
+                  user.role === 'MENTOR'
+                    ? 'bg-gray-100 text-gray-700'
+                    : 'bg-gray-100 text-gray-700'
                 }`}>
                   {user.role === 'MENTOR' ? 'Mentor' : 'Mentee'}
                 </span>
                 <button
                   onClick={logout}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="text-gray-600 hover:text-gray-900 text-sm font-normal transition-colors"
                 >
-                  Logout
+                  Log out
                 </button>
               </>
             ) : (
               <>
                 <Link
                   to="/login"
-                  className="text-gray-700 hover:text-gray-900 px-4 py-2 rounded-md transition-colors"
+                  className="text-gray-600 hover:text-gray-900 text-sm font-normal transition-colors"
                 >
-                  Sign In
+                  Sign in
                 </Link>
                 <Link
                   to="/signup"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
+                  className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-1.5 rounded-md text-sm font-normal transition-colors"
                 >
-                  Get Started
+                  Get started
                 </Link>
               </>
             )}

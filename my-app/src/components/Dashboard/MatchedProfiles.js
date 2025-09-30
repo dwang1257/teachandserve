@@ -242,7 +242,10 @@ const MatchedProfiles = () => {
                       </div>
                       
                       <div className="mt-4 flex justify-end space-x-3">
-                        <button className="px-4 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                        <button
+                          onClick={() => navigate(`/messages?userId=${profile.user?.id}`)}
+                          className="px-4 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                        >
                           Send Message
                         </button>
                         <button className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
