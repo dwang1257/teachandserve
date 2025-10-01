@@ -191,21 +191,73 @@ public class MatchingService {
     }
     
     /**
+     * Accept a match and update its status to ACCEPTED
+     */
+    public MatchResponse acceptMatch(Long matchId, String userEmail) {
+        Match match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new IllegalArgumentException("Match not found"));
+
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Verify user is part of this match
+        if (!match.getMentee().getId().equals(user.getId()) &&
+            !match.getMentor().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("User is not part of this match");
+        }
+
+        // Update status to ACCEPTED
+        match.setStatus(com.teachandserve.backend.model.MatchStatus.ACCEPTED);
+        match.setAcceptedAt(java.time.LocalDateTime.now());
+        match = matchRepository.save(match);
+
+        System.out.println("Match " + matchId + " accepted by user " + userEmail);
+
+        return convertToMatchResponse(match);
+    }
+
+    /**
+     * Reject a match and update its status to REJECTED
+     */
+    public MatchResponse rejectMatch(Long matchId, String userEmail) {
+        Match match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new IllegalArgumentException("Match not found"));
+
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Verify user is part of this match
+        if (!match.getMentee().getId().equals(user.getId()) &&
+            !match.getMentor().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("User is not part of this match");
+        }
+
+        // Update status to REJECTED
+        match.setStatus(com.teachandserve.backend.model.MatchStatus.REJECTED);
+        match.setRejectedAt(java.time.LocalDateTime.now());
+        match = matchRepository.save(match);
+
+        System.out.println("Match " + matchId + " rejected by user " + userEmail);
+
+        return convertToMatchResponse(match);
+    }
+
+    /**
      * Helper class to store profile with similarity score
      */
     private static class ProfileMatch {
         private final UserProfile profile;
         private final double similarity;
-        
+
         public ProfileMatch(UserProfile profile, double similarity) {
             this.profile = profile;
             this.similarity = similarity;
         }
-        
+
         public UserProfile getProfile() {
             return profile;
         }
-        
+
         public double getSimilarity() {
             return similarity;
         }

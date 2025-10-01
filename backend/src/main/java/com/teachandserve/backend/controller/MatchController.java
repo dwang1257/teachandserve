@@ -44,4 +44,48 @@ public class MatchController {
     public ResponseEntity<String> debug() {
         return ResponseEntity.ok("Match controller is working");
     }
+
+    @PostMapping("/{matchId}/accept")
+    public ResponseEntity<?> acceptMatch(@PathVariable Long matchId) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal() instanceof String) {
+                return ResponseEntity.status(401).build();
+            }
+
+            String email = authentication.getName();
+            System.out.println("User " + email + " accepting match " + matchId);
+
+            MatchResponse updatedMatch = matchingService.acceptMatch(matchId, email);
+            return ResponseEntity.ok(updatedMatch);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Error accepting match: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Failed to accept match");
+        }
+    }
+
+    @PostMapping("/{matchId}/reject")
+    public ResponseEntity<?> rejectMatch(@PathVariable Long matchId) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal() instanceof String) {
+                return ResponseEntity.status(401).build();
+            }
+
+            String email = authentication.getName();
+            System.out.println("User " + email + " rejecting match " + matchId);
+
+            MatchResponse updatedMatch = matchingService.rejectMatch(matchId, email);
+            return ResponseEntity.ok(updatedMatch);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Error rejecting match: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Failed to reject match");
+        }
+    }
 }
