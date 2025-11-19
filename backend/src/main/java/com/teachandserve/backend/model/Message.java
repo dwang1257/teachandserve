@@ -8,7 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "messages")
+@Table(name = "messages", indexes = {
+    @Index(name = "idx_messages_conversation_created", columnList = "conversation_id DESC, created_at DESC"),
+    @Index(name = "idx_messages_conversation_sender", columnList = "conversation_id, sender_id"),
+    @Index(name = "idx_messages_created_at", columnList = "created_at DESC")
+})
 public class Message {
 
     @Id

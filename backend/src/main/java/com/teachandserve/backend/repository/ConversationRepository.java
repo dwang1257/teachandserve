@@ -45,4 +45,13 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
            "AND cp.user.id = :userId")
     boolean isUserParticipant(@Param("conversationId") Long conversationId,
                               @Param("userId") Long userId);
+
+    /**
+     * Get all participant user IDs for a conversation.
+     * Optimized to avoid loading full participant objects.
+     * Single query that returns only the user IDs needed.
+     */
+    @Query("SELECT DISTINCT p.user.id FROM ConversationParticipant p " +
+           "WHERE p.conversation.id = :conversationId")
+    List<Long> findParticipantIdsByConversationId(@Param("conversationId") Long conversationId);
 }

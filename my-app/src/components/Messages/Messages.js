@@ -94,7 +94,14 @@ const Messages = () => {
   };
 
   const handleNewMessage = (message) => {
-    setMessages(prev => [...prev, message]);
+    setMessages(prev => {
+      // Check if message already exists (avoid duplicates from optimistic updates)
+      const messageExists = prev.some(msg => msg.id === message.id);
+      if (messageExists) {
+        return prev; // Message already in list, don't add duplicate
+      }
+      return [...prev, message];
+    });
     setShouldScroll(true);
 
     // Mark as read if conversation is selected
@@ -152,14 +159,11 @@ const Messages = () => {
               });
               console.log('Conversation created:', createResponse.data);
 
-              // Reload conversations to get the new one
-              const reloadResponse = await axios.get('/api/conversations');
-              const updatedConversations = reloadResponse.data || [];
-              setConversations(updatedConversations);
+              // Use the created conversation directly instead of reloading
+              targetConvo = createResponse.data;
 
-              targetConvo = updatedConversations.find(c =>
-                c.participants.some(p => p.id === targetUserId)
-              );
+              // Add to conversations list
+              setConversations(prev => [...prev, targetConvo]);
             } catch (error) {
               console.error('Failed to create conversation:', error);
               console.error('Error response:', error.response?.data);
@@ -206,22 +210,14 @@ const Messages = () => {
         peerUserId: matchUserId
       });
 
-      // The created conversation is returned in the response
-      const createdConvoId = createResponse.data.id;
+      // Use the created conversation directly instead of reloading
+      const newConvo = createResponse.data;
 
-      // Reload conversations
-      const reloadResponse = await axios.get('/api/conversations');
-      const updatedConversations = reloadResponse.data || [];
-      setConversations(updatedConversations);
+      // Add to conversations list
+      setConversations(prev => [...prev, newConvo]);
 
-      // Select the newly created conversation by ID
-      const newConvo = updatedConversations.find(c => c.id === createdConvoId);
-
-      if (newConvo) {
-        setSelectedConversation(newConvo);
-      } else {
-        setError('Conversation created but could not be loaded. Please refresh the page.');
-      }
+      // Select the newly created conversation
+      setSelectedConversation(newConvo);
     } catch (error) {
       console.error('Failed to start conversation:', error);
       const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message || 'Failed to start conversation';
@@ -255,22 +251,59 @@ const Messages = () => {
 
     try {
       setSending(true);
+      setError(null);
 
-      const response = await axios.post(
-        `/api/conversations/${selectedConversation.id}/messages`,
-        { body: newMessage }
-      );
+      const messageBody = newMessage; // Store the message text before clearing
 
-      // Message will be received via WebSocket, but add optimistically for better UX
-      if (!wsConnected) {
-        setMessages(prev => [...prev, response.data]);
-        setShouldScroll(true);
-      }
+      // 1. Create optimistic message object
+      const optimisticMessage = {
+        id: `temp-${Date.now()}`, // Temporary ID
+        conversationId: selectedConversation.id,
+        senderId: user.id,
+        senderName: user.email,
+        body: messageBody,
+        createdAt: new Date().toISOString(),
+        readBy: [],
+        isOptimistic: true // Mark as optimistic for UI purposes
+      };
 
+      // 2. Add optimistic message to UI immediately
+      setMessages(prev => [...prev, optimisticMessage]);
+      setShouldScroll(true);
       setNewMessage('');
+
+      // 3. Send to server
+      try {
+        const response = await axios.post(
+          `/api/conversations/${selectedConversation.id}/messages`,
+          { body: messageBody }
+        );
+
+        // 4. Replace optimistic message with real one from server
+        // Store the real message ID to prevent duplicate WebSocket messages
+        const realMessageId = response.data.id;
+
+        setMessages(prev =>
+          prev
+            // First, filter out any message with the real ID (in case WebSocket delivered it already)
+            .filter(msg => msg.id !== realMessageId)
+            // Then replace the optimistic message
+            .map(msg =>
+              msg.isOptimistic && msg.id === optimisticMessage.id
+                ? { ...response.data, isOptimistic: false }
+                : msg
+            )
+        );
+      } catch (serverError) {
+        // 5. Rollback optimistic update on error
+        setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+        const errorMsg = serverError.response?.data?.error || serverError.message || 'Failed to send message';
+        setError(errorMsg);
+        setNewMessage(messageBody); // Restore message text
+      }
     } catch (error) {
       console.error('Failed to send message:', error);
-      setError(error.response?.data?.error || 'Failed to send message');
+      setError(error.message || 'An error occurred while sending the message');
     } finally {
       setSending(false);
     }
@@ -506,16 +539,21 @@ const Messages = () => {
                             isCurrentUser
                               ? 'bg-gray-900 text-white'
                               : 'bg-white text-gray-900 border border-gray-200'
-                          }`}
+                          } ${message.isOptimistic ? 'opacity-70' : 'opacity-100'}`}
                         >
                           <p className="text-sm break-words">{message.body}</p>
-                          <p
-                            className={`text-xs mt-1 ${
-                              isCurrentUser ? 'text-gray-400' : 'text-gray-500'
-                            }`}
-                          >
-                            {formatTime(message.createdAt)}
-                          </p>
+                          <div className="flex items-center justify-between gap-2">
+                            <p
+                              className={`text-xs mt-1 ${
+                                isCurrentUser ? 'text-gray-400' : 'text-gray-500'
+                              }`}
+                            >
+                              {formatTime(message.createdAt)}
+                            </p>
+                            {message.isOptimistic && (
+                              <span className="text-xs text-gray-400">Sending...</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );

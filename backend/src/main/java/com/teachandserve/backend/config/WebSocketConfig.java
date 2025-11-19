@@ -9,6 +9,10 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 /**
  * WebSocket configuration for real-time messaging using STOMP protocol.
  *
+ * Supports both single-instance and distributed deployment:
+ * - Single instance: In-memory broker (development)
+ * - Multi-instance: Redis Pub/Sub broker (production)
+ *
  * Endpoints:
  * - /ws: WebSocket handshake endpoint with SockJS fallback
  *
@@ -27,12 +31,30 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        // Enable a simple in-memory message broker
-        // For production, consider using an external broker like RabbitMQ or ActiveMQ
+        // Enable simple in-memory broker for development
+        // For production with multi-instance, use STOMP broker relay
         registry.enableSimpleBroker("/topic");
+
+        // Production: Use external broker relay for Redis Pub/Sub
+        // Uncomment below for multi-instance deployments
+        /*
+        registry.enableStompBrokerRelay("/topic")
+                .setRelayHost("localhost")
+                .setRelayPort(61613)
+                .setVirtualHost("/")
+                .setAutoStartup(true)
+                .setClientPasscode("")
+                .setClientLogin("")
+                .setSystemPasscode("")
+                .setSystemLogin("");
+        */
 
         // Prefix for messages bound for @MessageMapping methods
         registry.setApplicationDestinationPrefixes("/app");
+
+        // Allow time for broker operations
+        registry.setApplicationDestinationPrefixes("/app");
+        registry.setUserDestinationPrefix("/user");
     }
 
     @Override

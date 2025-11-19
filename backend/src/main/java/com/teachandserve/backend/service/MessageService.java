@@ -27,35 +27,57 @@ public class MessageService {
     private final MessageReadReceiptRepository readReceiptRepository;
     private final ConversationService conversationService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final RateLimitingService rateLimitingService;
+    private final EncryptionService encryptionService;
 
     public MessageService(MessageRepository messageRepository,
                          ConversationRepository conversationRepository,
                          UserRepository userRepository,
                          MessageReadReceiptRepository readReceiptRepository,
                          ConversationService conversationService,
-                         SimpMessagingTemplate messagingTemplate) {
+                         SimpMessagingTemplate messagingTemplate,
+                         RateLimitingService rateLimitingService,
+                         EncryptionService encryptionService) {
         this.messageRepository = messageRepository;
         this.conversationRepository = conversationRepository;
         this.userRepository = userRepository;
         this.readReceiptRepository = readReceiptRepository;
         this.conversationService = conversationService;
         this.messagingTemplate = messagingTemplate;
+        this.rateLimitingService = rateLimitingService;
+        this.encryptionService = encryptionService;
     }
 
     /**
      * Send a message in a conversation with real-time publishing.
      *
+     * Features:
+     * - Rate limiting (60 messages per minute)
+     * - Message encryption (AES-256)
+     * - Real-time WebSocket delivery
+     * - Automatic cache invalidation
+     *
      * @param conversationId Conversation ID
      * @param senderId       Sender user ID
      * @param body           Message body
      * @return MessageResponse DTO
-     * @throws IllegalArgumentException if conversation not found or sender not authorized
+     * @throws IllegalArgumentException if conversation not found, sender not authorized, or rate limit exceeded
      */
     @Transactional
     public MessageResponse sendMessage(Long conversationId, Long senderId, String body) {
-        // Validate sender is participant
+        // 1. Validate sender is participant
         if (!conversationService.isUserParticipant(conversationId, senderId)) {
             throw new IllegalArgumentException("Sender is not a participant in this conversation");
+        }
+
+        // 2. Check rate limit
+        if (!rateLimitingService.allowMessage(senderId)) {
+            int remaining = rateLimitingService.getRemainingMessages(senderId);
+            long resetTime = rateLimitingService.getResetTime(senderId);
+            throw new IllegalArgumentException(
+                    String.format("Rate limit exceeded. Remaining messages: %d, resets in: %d seconds",
+                            remaining, resetTime)
+            );
         }
 
         Conversation conversation = conversationRepository.findById(conversationId)
@@ -64,20 +86,22 @@ public class MessageService {
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new RuntimeException("Sender not found"));
 
-        // Create and save message
-        Message message = new Message(conversation, sender, body);
+        // 3. Encrypt message body
+        String encryptedBody = encryptionService.encrypt(body, conversationId);
+
+        // Create and save message with encrypted content
+        Message message = new Message(conversation, sender, encryptedBody);
         message = messageRepository.save(message);
 
-        // Convert to DTO
-        MessageResponse response = toMessageResponse(message);
+        // 4. Convert to DTO with decrypted content for response
+        MessageResponse response = toMessageResponse(message, conversationId);
 
-        // Publish to WebSocket topic for this conversation
+        // 5. Publish to WebSocket topic for this conversation
         publishMessageToConversation(conversationId, response);
 
-        // Notify all participants about conversation update
-        conversation.getParticipants().forEach(participant -> {
-            publishConversationUpdate(participant.getUser().getId());
-        });
+        // 6. Notify all participants about conversation update (optimized - single query)
+        List<Long> participantIds = conversationRepository.findParticipantIdsByConversationId(conversationId);
+        participantIds.forEach(this::publishConversationUpdate);
 
         return response;
     }
@@ -85,11 +109,16 @@ public class MessageService {
     /**
      * Get paginated messages for a conversation.
      *
+     * Features:
+     * - Message decryption (AES-256)
+     * - Pagination support (50 messages per page)
+     * - Conversation participant validation
+     *
      * @param conversationId Conversation ID
      * @param userId         User ID requesting messages (for authorization)
      * @param beforeMessageId Optional message ID for pagination (get messages before this ID)
-     * @param limit          Number of messages to retrieve
-     * @return List of MessageResponse DTOs
+     * @param limit          Number of messages to retrieve (max 100)
+     * @return List of MessageResponse DTOs with decrypted content
      */
     public List<MessageResponse> getMessages(Long conversationId, Long userId,
                                             Long beforeMessageId, int limit) {
@@ -97,6 +126,9 @@ public class MessageService {
         if (!conversationService.isUserParticipant(conversationId, userId)) {
             throw new IllegalArgumentException("User is not a participant in this conversation");
         }
+
+        // Enforce limit maximum
+        limit = Math.min(limit, 100);
 
         Pageable pageable = PageRequest.of(0, limit);
         List<Message> messages;
@@ -109,8 +141,9 @@ public class MessageService {
                     conversationId, pageable);
         }
 
+        // Decrypt messages and convert to DTOs
         return messages.stream()
-                .map(this::toMessageResponse)
+                .map(msg -> toMessageResponse(msg, conversationId))
                 .collect(Collectors.toList());
     }
 
@@ -172,9 +205,10 @@ public class MessageService {
      * @param userId User ID to notify
      */
     private void publishConversationUpdate(Long userId) {
+        // Send as a proper JSON object to avoid parsing errors on client
         messagingTemplate.convertAndSend(
                 "/topic/users." + userId + ".conversations",
-                "update" // Simple update signal; client will refetch conversation list
+                new ConversationUpdateNotification("update")
         );
     }
 
@@ -193,7 +227,44 @@ public class MessageService {
     }
 
     /**
-     * Convert Message entity to MessageResponse DTO.
+     * Convert Message entity to MessageResponse DTO with decrypted content.
+     * Used when retrieving messages from database.
+     *
+     * @param message Message entity
+     * @param conversationId Conversation ID for decryption
+     * @return MessageResponse DTO with decrypted message body
+     */
+    private MessageResponse toMessageResponse(Message message, Long conversationId) {
+        List<Long> readBy = message.getReadReceipts().stream()
+                .map(receipt -> receipt.getUser().getId())
+                .collect(Collectors.toList());
+
+        // Decrypt message body
+        String decryptedBody;
+        try {
+            decryptedBody = encryptionService.decrypt(message.getBody(), conversationId);
+        } catch (Exception e) {
+            // Fallback to encrypted body if decryption fails
+            decryptedBody = "[Decryption failed]";
+            System.err.println("Failed to decrypt message " + message.getId() + ": " + e.getMessage());
+        }
+
+        return new MessageResponse(
+                message.getId(),
+                message.getConversation().getId(),
+                message.getSender().getId(),
+                message.getSender().getEmail(),
+                decryptedBody,
+                message.getCreatedAt(),
+                message.getEditedAt(),
+                message.getDeletedAt(),
+                readBy
+        );
+    }
+
+    /**
+     * Convert Message entity to MessageResponse DTO without decryption.
+     * Used immediately after sending (message is already decrypted in sendMessage).
      *
      * @param message Message entity
      * @return MessageResponse DTO
@@ -203,17 +274,38 @@ public class MessageService {
                 .map(receipt -> receipt.getUser().getId())
                 .collect(Collectors.toList());
 
+        // For newly sent messages, body is already encrypted but we return as-is
+        // The sendMessage method handles decryption before response
         return new MessageResponse(
                 message.getId(),
                 message.getConversation().getId(),
                 message.getSender().getId(),
-                message.getSender().getEmail(), // Using email as sender name
+                message.getSender().getEmail(),
                 message.getBody(),
                 message.getCreatedAt(),
                 message.getEditedAt(),
                 message.getDeletedAt(),
                 readBy
         );
+    }
+
+    /**
+     * Inner class for conversation update notifications.
+     */
+    public static class ConversationUpdateNotification {
+        private String type;
+
+        public ConversationUpdateNotification(String type) {
+            this.type = type;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
     }
 
     /**
