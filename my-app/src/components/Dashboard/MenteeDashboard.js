@@ -11,6 +11,7 @@ const MenteeDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(location.state?.message || '');
   const [warning, setWarning] = useState(location.state?.warning || '');
+  const [profileCompleteDismissed, setProfileCompleteDismissed] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -61,7 +62,15 @@ const MenteeDashboard = () => {
           <p className="mt-2 text-gray-600">Welcome! Discover mentors and track your learning journey.</p>
           
           {message && (
-            <div className="mt-4 p-4 bg-green-100 border border-green-400 rounded-md">
+            <div className="mt-4 p-4 bg-green-100 border border-green-400 rounded-md relative">
+              <button
+                onClick={() => setMessage('')}
+                className="absolute top-2 right-2 text-green-600 hover:text-green-800"
+              >
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
               <div className="flex">
                 <div className="flex-shrink-0">
                   <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
@@ -76,7 +85,15 @@ const MenteeDashboard = () => {
           )}
           
           {warning && (
-            <div className="mt-4 p-4 bg-yellow-100 border border-yellow-400 rounded-md">
+            <div className="mt-4 p-4 bg-yellow-100 border border-yellow-400 rounded-md relative">
+              <button
+                onClick={() => setWarning('')}
+                className="absolute top-2 right-2 text-yellow-600 hover:text-yellow-800"
+              >
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
               <div className="flex">
                 <div className="flex-shrink-0">
                   <svg className="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -91,52 +108,66 @@ const MenteeDashboard = () => {
           )}
           
           {!loading && (!profile || !profile.isProfileComplete) && (
-            <div className="mt-4 p-4 bg-yellow-100 border border-yellow-400 rounded-md">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-yellow-800">
-                    Complete your profile to get matched with perfect mentors!
-                  </h3>
-                  <div className="mt-2">
-                    <Link
-                      to="/complete-profile"
-                      className="text-sm bg-yellow-200 hover:bg-yellow-300 text-yellow-800 px-3 py-1 rounded-md font-medium"
-                    >
-                      Complete Profile
-                    </Link>
+            <div className="mt-4 p-4 bg-yellow-100 border border-yellow-400 rounded-md relative">
+              <button
+                onClick={() => setWarning('')}
+                className="absolute top-2 right-2 text-yellow-600 hover:text-yellow-800"
+              >
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center flex-1">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
                   </div>
+                  <div className="ml-3 flex-1">
+                    <h3 className="text-base font-semibold text-yellow-800">
+                      Complete your profile to get matched with perfect mentors!
+                    </h3>
+                  </div>
+                </div>
+                <div className="ml-4">
+                  <Link
+                    to="/complete-profile"
+                    className="text-sm bg-yellow-200 hover:bg-yellow-300 text-yellow-800 px-4 py-2 rounded-md font-medium whitespace-nowrap"
+                  >
+                    Complete Profile
+                  </Link>
                 </div>
               </div>
             </div>
           )}
           
-          {!loading && profile && profile.isProfileComplete && (
-            <div className="mt-4 p-4 bg-green-100 border border-green-400 rounded-md">
-              <div className="flex justify-between items-center">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-green-800">
-                      Profile Complete - Ready for matching!
-                    </h3>
-                    <p className="text-sm text-green-700 mt-1">
-                      Your profile is live and you can receive mentor matches.
-                    </p>
-                  </div>
+          {!loading && profile && profile.isProfileComplete && !profileCompleteDismissed && (
+            <div className="mt-4 p-4 bg-green-100 border border-green-400 rounded-md relative">
+              <button
+                onClick={() => setProfileCompleteDismissed(true)}
+                className="absolute top-2 right-2 text-green-600 hover:text-green-800"
+              >
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+              <div className="text-center">
+                <div className="flex justify-center mb-2">
+                  <svg className="h-6 w-6 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
                 </div>
-                <div>
+                <h3 className="text-lg font-bold text-green-800">
+                  Profile Complete - Ready for matching!
+                </h3>
+                <p className="text-base text-green-700 mt-2">
+                  Your profile is live and you can receive mentor matches.
+                </p>
+                <div className="mt-4">
                   <Link
                     to="/profile/view"
-                    className="text-sm bg-green-200 hover:bg-green-300 text-green-800 px-3 py-1 rounded-md font-medium"
+                    className="inline-block text-sm bg-green-200 hover:bg-green-300 text-green-800 px-4 py-2 rounded-md font-medium"
                   >
                     View Profile
                   </Link>
@@ -151,7 +182,7 @@ const MenteeDashboard = () => {
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center">
                     <span className="text-white font-semibold">M</span>
                   </div>
                 </div>
@@ -173,7 +204,7 @@ const MenteeDashboard = () => {
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
                     <span className="text-white font-semibold">S</span>
                   </div>
                 </div>
@@ -195,7 +226,7 @@ const MenteeDashboard = () => {
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
                     <span className="text-white font-semibold">G</span>
                   </div>
                 </div>
@@ -224,7 +255,7 @@ const MenteeDashboard = () => {
                 {matches.length > 0 && (
                   <Link
                     to="/matches"
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-900 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
                   >
                     View All Matches
                   </Link>

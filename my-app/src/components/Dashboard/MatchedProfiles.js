@@ -20,25 +20,25 @@ const MatchedProfiles = () => {
     try {
       setLoading(true);
       setError('');
-      
+
       // Get matches
       const matchesResponse = await axios.get('/api/matches/my-matches');
       const matchesData = matchesResponse.data || [];
       setMatches(matchesData);
-      
+
       // For each match, get the profile details
       const profilePromises = matchesData.map(async (match) => {
         try {
           const targetUserId = user.role === 'MENTOR' ? match.menteeProfile?.user?.id : match.mentorProfile?.user?.id;
           const targetProfile = user.role === 'MENTOR' ? match.menteeProfile : match.mentorProfile;
-          
+
           if (targetProfile) {
             return {
               ...match,
               profile: targetProfile
             };
           }
-          
+
           // Fallback: try to fetch profile by user ID if available
           if (targetUserId) {
             const profileResponse = await axios.get(`/api/profile/${targetUserId}`);
@@ -47,23 +47,43 @@ const MatchedProfiles = () => {
               profile: profileResponse.data
             };
           }
-          
+
           return null;
         } catch (error) {
           console.error('Failed to load profile for match:', error);
           return null;
         }
       });
-      
+
       const profiles = await Promise.all(profilePromises);
       const validProfiles = profiles.filter(profile => profile !== null);
       setMatchedProfiles(validProfiles);
-      
+
     } catch (error) {
       console.error('Failed to load matches:', error);
       setError('Failed to load matches. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAcceptMatch = async (matchId) => {
+    try {
+      await axios.post(`/api/matches/${matchId}/accept`);
+      await loadMatches();
+    } catch (error) {
+      console.error('Failed to accept match:', error);
+      setError('Failed to accept match. Please try again.');
+    }
+  };
+
+  const handleRejectMatch = async (matchId) => {
+    try {
+      await axios.post(`/api/matches/${matchId}/reject`);
+      await loadMatches();
+    } catch (error) {
+      console.error('Failed to reject match:', error);
+      setError('Failed to reject match. Please try again.');
     }
   };
 
@@ -180,8 +200,22 @@ const MatchedProfiles = () => {
                             )}
                           </div>
                         </div>
-                        <div className="text-xs text-gray-400">
-                          Status: {matchData.status || 'Active'}
+                        <div>
+                          {matchData.status === 'PENDING' && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                              Pending
+                            </span>
+                          )}
+                          {matchData.status === 'ACCEPTED' && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              Accepted
+                            </span>
+                          )}
+                          {matchData.status === 'REJECTED' && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                              Rejected
+                            </span>
+                          )}
                         </div>
                       </div>
                       
@@ -242,12 +276,40 @@ const MatchedProfiles = () => {
                       </div>
                       
                       <div className="mt-4 flex justify-end space-x-3">
-                        <button className="px-4 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-                          Send Message
-                        </button>
-                        <button className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-                          Schedule Session
-                        </button>
+                        {matchData.status === 'PENDING' && (
+                          <>
+                            <button
+                              onClick={() => handleRejectMatch(matchData.id)}
+                              className="px-4 py-2 text-sm border border-red-300 rounded-md text-red-700 hover:bg-red-50"
+                            >
+                              Reject Match
+                            </button>
+                            <button
+                              onClick={() => handleAcceptMatch(matchData.id)}
+                              className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700"
+                            >
+                              Accept Match
+                            </button>
+                          </>
+                        )}
+                        {matchData.status === 'ACCEPTED' && (
+                          <>
+                            <button
+                              onClick={() => navigate(`/messages?userId=${profile.user?.id}`)}
+                              className="px-4 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                            >
+                              Send Message
+                            </button>
+                            <button className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                              Schedule Session
+                            </button>
+                          </>
+                        )}
+                        {matchData.status === 'REJECTED' && (
+                          <span className="px-4 py-2 text-sm text-gray-500 italic">
+                            Match rejected
+                          </span>
+                        )}
                       </div>
                     </div>
                   );

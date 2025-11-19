@@ -143,7 +143,7 @@ const Signup = () => {
                 type="email"
                 autoComplete="email"
                 required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-gray-500 focus:border-gray-900 focus:z-10 sm:text-sm"
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -179,39 +179,57 @@ const Signup = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-3 text-center">
                 I want to be a:
               </label>
               <div className="space-y-3">
-                <div className="flex items-center">
-                  <input
-                    id="mentor"
-                    name="role"
-                    type="radio"
-                    value="MENTOR"
-                    checked={role === 'MENTOR'}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
-                  />
-                  <label htmlFor="mentor" className="ml-3 block text-sm font-medium text-gray-700">
-                    <span className="font-semibold">Mentor</span>
-                    <span className="block text-xs text-gray-500">Share your expertise and guide others</span>
-                  </label>
+                <div
+                  onClick={() => setRole('MENTOR')}
+                  className={`cursor-pointer p-4 border-2 rounded-lg transition-all ${
+                    role === 'MENTOR'
+                      ? 'border-gray-900 bg-gray-100'
+                      : 'border-gray-300 bg-white hover:border-gray-400'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <input
+                      id="mentor"
+                      name="role"
+                      type="radio"
+                      value="MENTOR"
+                      checked={role === 'MENTOR'}
+                      onChange={(e) => setRole(e.target.value)}
+                      className="h-4 w-4 text-gray-900 focus:ring-gray-500 border-gray-300"
+                    />
+                    <label htmlFor="mentor" className="ml-3 block text-sm font-medium text-gray-700 text-center flex-1">
+                      <span className="font-semibold">Mentor</span>
+                      <span className="block text-xs text-gray-500">Share your expertise and guide others</span>
+                    </label>
+                  </div>
                 </div>
-                <div className="flex items-center">
-                  <input
-                    id="mentee"
-                    name="role"
-                    type="radio"
-                    value="MENTEE"
-                    checked={role === 'MENTEE'}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
-                  />
-                  <label htmlFor="mentee" className="ml-3 block text-sm font-medium text-gray-700">
-                    <span className="font-semibold">Mentee</span>
-                    <span className="block text-xs text-gray-500">Learn from experienced mentors</span>
-                  </label>
+                <div
+                  onClick={() => setRole('MENTEE')}
+                  className={`cursor-pointer p-4 border-2 rounded-lg transition-all ${
+                    role === 'MENTEE'
+                      ? 'border-gray-900 bg-gray-100'
+                      : 'border-gray-300 bg-white hover:border-gray-400'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <input
+                      id="mentee"
+                      name="role"
+                      type="radio"
+                      value="MENTEE"
+                      checked={role === 'MENTEE'}
+                      onChange={(e) => setRole(e.target.value)}
+                      className="h-4 w-4 text-gray-900 focus:ring-gray-500 border-gray-300"
+                    />
+                    <label htmlFor="mentee" className="ml-3 block text-sm font-medium text-gray-700 text-center flex-1">
+                      <span className="font-semibold">Mentee</span>
+                      <span className="block text-xs text-gray-500">Learn from experienced mentors</span>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -221,7 +239,7 @@ const Signup = () => {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating account...' : 'Create account'}
             </button>
@@ -230,7 +248,7 @@ const Signup = () => {
           <div className="text-center">
             <span className="text-sm text-gray-600">
               Already have an account?{' '}
-              <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+              <Link to="/login" className="font-medium text-gray-900 hover:text-gray-700">
                 Sign in
               </Link>
             </span>
