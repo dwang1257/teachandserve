@@ -301,6 +301,50 @@ This will start the React app at `http://localhost:3000`, proxied to hit the bac
 
 ---
 
+## Running Everything with Docker
+
+If you want a zero-install setup (or to let a teammate spin things up quickly), use the provided Docker configuration at the repo root.
+
+### Prerequisites
+
+- Docker Desktop (or Docker Engine + Docker Compose v2)
+
+### One-time setup
+
+1. (Optional) Update any secrets or environment values in `docker-compose.yml`. By default the stack uses:
+   - PostgreSQL user `teachandserve_app` / password `teachandserve_dev_password`
+   - Redis without a password
+   - Spring Boot’s default JWT secret from `application.properties`
+2. If you plan to use the OpenAI embedding mode, set `OPENAI_API_KEY` on the `backend` service.
+
+### Start the stack
+
+From the repository root:
+
+```bash
+docker compose up --build
+```
+
+This command will:
+
+- Build the backend image (`backend/Dockerfile`) and start it on `http://localhost:8080`
+- Build the frontend image (`my-app/Dockerfile`) and serve it via Nginx on `http://localhost:3000`
+- Provision PostgreSQL (`postgres:16-alpine`) with the `teachandserve_secure` database
+- Provision Redis (`redis:7-alpine`) for caching and rate limiting
+
+All services expose their default ports to your host so you can still connect with external tools (e.g., psql, TablePlus, RedisInsight).
+
+### Useful commands
+
+- Rebuild after code changes: `docker compose up --build backend frontend`
+- Follow backend logs: `docker compose logs -f backend`
+- Shut everything down (remove containers): `docker compose down`
+- Shut down and wipe the Postgres/Redis data volumes: `docker compose down -v`
+
+> NOTE: Hot reloading isn’t enabled inside the containers. For day-to-day development you may still prefer running the backend and frontend locally as described above. The Docker setup is ideal for onboarding partners or verifying a clean-room environment.
+
+---
+
 ## Key Features Summary
 
 - **Role‑based onboarding**:

@@ -1,0 +1,70 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: teachandserve_secure
+      POSTGRES_USER: teachandserve_app
+      POSTGRES_PASSWORD: teachandserve_dev_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U teachandserve_app -d teachandserve_secure"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/teachandserve_secure
+      SPRING_DATASOURCE_USERNAME: teachandserve_app
+      SPRING_DATASOURCE_PASSWORD: teachandserve_dev_password
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      DB_PASSWORD: teachandserve_dev_password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      # Uncomment the following line and set a value if you want to use real embeddings.
+      # OPENAI_API_KEY: ""
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./my-app
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  redis-data:
+
