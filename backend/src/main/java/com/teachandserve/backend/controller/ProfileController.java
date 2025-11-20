@@ -6,6 +6,7 @@ import com.teachandserve.backend.model.Role;
 import com.teachandserve.backend.model.User;
 import com.teachandserve.backend.service.MatchingService;
 import com.teachandserve.backend.service.ProfileService;
+import com.teachandserve.backend.repository.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -183,6 +184,17 @@ public class ProfileController {
         }
     }
     
+    @Autowired
+    private UserRepository userRepository;
+    
+    @PostMapping("/popup-seen")
+    public ResponseEntity<?> markPopupAsSeen() {
+        User user = getCurrentUser();
+        user.setHasSeenCompletionPopup(true);
+        userRepository.save(user);
+        return ResponseEntity.ok(Map.of("message", "Popup marked as seen"));
+    }
+
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         

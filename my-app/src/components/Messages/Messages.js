@@ -55,31 +55,48 @@ const Messages = () => {
 
   // Load conversations and matches on mount
   useEffect(() => {
-    loadConversations();
-    loadAcceptedMatches();
+    let mounted = true;
+
+    const init = async () => {
+        if (mounted) {
+            await Promise.all([
+                loadConversations(),
+                loadAcceptedMatches()
+            ]);
+        }
+    };
+    init();
+
+    return () => { mounted = false; };
   }, []);
 
   // Subscribe to selected conversation's messages
   useEffect(() => {
-    if (selectedConversation && wsConnected) {
-      loadMessages(selectedConversation.id);
+    if (!selectedConversation || !wsConnected) return;
 
-      // Subscribe to new messages in this conversation
-      const subId = websocketService.subscribe(
-        `/topic/conversations.${selectedConversation.id}.messages`,
-        handleNewMessage
-      );
-      if (subId) subscriptionsRef.current.push(subId);
+    // Subscribe to new messages in this conversation
+    const subId = websocketService.subscribe(
+      `/topic/conversations.${selectedConversation.id}.messages`,
+      handleNewMessage
+    );
+    if (subId) subscriptionsRef.current.push(subId);
 
-      // Mark messages as read when opening conversation
+    // Mark messages as read when opening conversation
+    if (selectedConversation.unreadCount > 0) {
       markAsRead();
-
-      return () => {
-        if (subId) websocketService.unsubscribe(subId);
-        subscriptionsRef.current = subscriptionsRef.current.filter(id => id !== subId);
-      };
     }
-  }, [selectedConversation, wsConnected]);
+
+    // Load messages only if we don't have them or if we switched conversations
+    if (messages.length === 0 || (messages.length > 0 && messages[0].conversationId !== selectedConversation.id)) {
+         loadMessages(selectedConversation.id);
+    }
+
+
+    return () => {
+      if (subId) websocketService.unsubscribe(subId);
+      subscriptionsRef.current = subscriptionsRef.current.filter(id => id !== subId);
+    };
+  }, [selectedConversation?.id, wsConnected]); // Only re-run if ID or connection status changes
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -106,7 +123,11 @@ const Messages = () => {
 
     // Mark as read if conversation is selected
     if (selectedConversation && selectedConversation.id === message.conversationId) {
-      markAsRead();
+      // Debounce read marking to avoid spamming server
+      const timeoutId = setTimeout(() => {
+         markAsRead();
+      }, 1000);
+      return () => clearTimeout(timeoutId);
     }
   };
 

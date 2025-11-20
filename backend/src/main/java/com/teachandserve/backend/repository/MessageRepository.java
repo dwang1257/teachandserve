@@ -1,6 +1,8 @@
 package com.teachandserve.backend.repository;
 
+import com.teachandserve.backend.dto.MessageDTO;
 import com.teachandserve.backend.model.Message;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -12,6 +14,45 @@ import java.util.Optional;
 
 @Repository
 public interface MessageRepository extends JpaRepository<Message, Long> {
+
+    /**
+     * OPTIMIZED: Get messages for a conversation using DTO projection.
+     * Reduces memory overhead and fetches sender details in one query.
+     */
+    @Query("""
+        SELECT
+            m.id as id,
+            u.id as senderId,
+            u.email as senderEmail,
+            u.firstName as senderFirstName,
+            m.body as body,
+            m.createdAt as createdAt,
+            m.editedAt as editedAt,
+            m.deletedAt as deletedAt
+        FROM Message m
+        JOIN m.sender u
+        WHERE m.conversation.id = :conversationId
+        ORDER BY m.createdAt DESC
+    """)
+    Page<MessageDTO> findMessagesOptimized(@Param("conversationId") Long conversationId, Pageable pageable);
+
+    /**
+     * Find unread message IDs for a user in a conversation.
+     * Used for bulk marking as read.
+     */
+    @Query("""
+        SELECT m.id FROM Message m
+        WHERE m.conversation.id = :conversationId
+        AND m.sender.id <> :userId
+        AND m.id <= :lastMessageId
+        AND NOT EXISTS (
+            SELECT 1 FROM MessageReadReceipt mrr
+            WHERE mrr.message.id = m.id AND mrr.user.id = :userId
+        )
+    """)
+    List<Long> findUnreadMessageIds(@Param("conversationId") Long conversationId,
+                                   @Param("userId") Long userId,
+                                   @Param("lastMessageId") Long lastMessageId);
 
     /**
      * Find messages for a conversation, ordered by creation time descending (newest first).

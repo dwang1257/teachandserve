@@ -34,13 +34,15 @@ public class AuthResponse {
         private Long id;
         private String email;
         private Role role;
+        private boolean hasSeenCompletionPopup;
         
         public UserInfo() {}
         
-        public UserInfo(Long id, String email, Role role) {
+        public UserInfo(Long id, String email, Role role, boolean hasSeenCompletionPopup) {
             this.id = id;
             this.email = email;
             this.role = role;
+            this.hasSeenCompletionPopup = hasSeenCompletionPopup;
         }
         
         public Long getId() {
@@ -65,6 +67,14 @@ public class AuthResponse {
         
         public void setRole(Role role) {
             this.role = role;
+        }
+        
+        public boolean isHasSeenCompletionPopup() {
+            return hasSeenCompletionPopup;
+        }
+
+        public void setHasSeenCompletionPopup(boolean hasSeenCompletionPopup) {
+            this.hasSeenCompletionPopup = hasSeenCompletionPopup;
         }
     }
 }
