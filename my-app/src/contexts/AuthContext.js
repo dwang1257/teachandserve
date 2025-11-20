@@ -140,6 +140,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
+    setUser, // Export setUser so other components can update user state (e.g., popup seen)
     login,
     signup,
     logout,

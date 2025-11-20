@@ -23,6 +23,15 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password;
     
+    @Column(name = "first_name")
+    private String firstName;
+
+    @Column(name = "last_name")
+    private String lastName;
+
+    @Column(name = "has_seen_completion_popup", nullable = false, columnDefinition = "boolean default false")
+    private boolean hasSeenCompletionPopup = false;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
@@ -92,7 +101,31 @@ public class User implements UserDetails {
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
     
+    public boolean isHasSeenCompletionPopup() {
+        return hasSeenCompletionPopup;
+    }
+
+    public void setHasSeenCompletionPopup(boolean hasSeenCompletionPopup) {
+        this.hasSeenCompletionPopup = hasSeenCompletionPopup;
+    }
+
     @Override
     public String getUsername() {
         return email;

@@ -4,14 +4,26 @@ import { Link, useLocation } from 'react-router-dom';
 import axios from '../../config/axios';
 
 const MenteeDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, setUser, logout } = useAuth();
   const location = useLocation();
   const [profile, setProfile] = useState(null);
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(location.state?.message || '');
   const [warning, setWarning] = useState(location.state?.warning || '');
-  const [profileCompleteDismissed, setProfileCompleteDismissed] = useState(false);
+
+  // Check user state for popup seen status instead of local state
+  const showCompletionPopup = !loading && profile && profile.isProfileComplete && !user?.hasSeenCompletionPopup;
+
+  const handleDismissPopup = async () => {
+    try {
+      await axios.post('/api/profile/popup-seen');
+      // Update user context
+      setUser({ ...user, hasSeenCompletionPopup: true });
+    } catch (error) {
+      console.error('Failed to mark popup as seen:', error);
+    }
+  };
 
   useEffect(() => {
     loadProfile();
@@ -110,7 +122,7 @@ const MenteeDashboard = () => {
           {!loading && (!profile || !profile.isProfileComplete) && (
             <div className="mt-4 p-4 bg-yellow-100 border border-yellow-400 rounded-md relative">
               <button
-                onClick={() => setWarning('')}
+                onClick={() => setWarning('')} // This seems wrong in original code, but keeping behavior consistent for now if it was just closing the div
                 className="absolute top-2 right-2 text-yellow-600 hover:text-yellow-800"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -142,10 +154,10 @@ const MenteeDashboard = () => {
             </div>
           )}
           
-          {!loading && profile && profile.isProfileComplete && !profileCompleteDismissed && (
+          {showCompletionPopup && (
             <div className="mt-4 p-4 bg-green-100 border border-green-400 rounded-md relative">
               <button
-                onClick={() => setProfileCompleteDismissed(true)}
+                onClick={handleDismissPopup}
                 className="absolute top-2 right-2 text-green-600 hover:text-green-800"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">

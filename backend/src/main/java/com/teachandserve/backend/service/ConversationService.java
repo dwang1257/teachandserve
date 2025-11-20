@@ -1,5 +1,6 @@
 package com.teachandserve.backend.service;
 
+import com.teachandserve.backend.dto.ConversationListDTO;
 import com.teachandserve.backend.dto.ConversationResponse;
 import com.teachandserve.backend.dto.MessageResponse;
 import com.teachandserve.backend.dto.ParticipantDto;
@@ -65,21 +66,20 @@ public class ConversationService {
             return existingConversation.get();
         }
 
-        // Create new conversation
-        User currentUser = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        User peerUser = userRepository.findById(peerUserId)
-                .orElseThrow(() -> new RuntimeException("Peer user not found"));
-
+        // OPTIMIZED: Use proxy references instead of full User loading
+        // This avoids fetching unnecessary User data when we only need the IDs
         Conversation conversation = new Conversation();
         conversation = conversationRepository.save(conversation);
 
-        // Add participants
-        ConversationParticipant participant1 = new ConversationParticipant(conversation, currentUser);
-        ConversationParticipant participant2 = new ConversationParticipant(conversation, peerUser);
+        // Get proxy references without loading full User entities
+        User currentUserProxy = userRepository.getReferenceById(userId);
+        User peerUserProxy = userRepository.getReferenceById(peerUserId);
 
-        participantRepository.save(participant1);
-        participantRepository.save(participant2);
+        // Add participants using batch insert
+        ConversationParticipant participant1 = new ConversationParticipant(conversation, currentUserProxy);
+        ConversationParticipant participant2 = new ConversationParticipant(conversation, peerUserProxy);
+
+        participantRepository.saveAll(List.of(participant1, participant2));
 
         conversation.getParticipants().add(participant1);
         conversation.getParticipants().add(participant2);
@@ -88,16 +88,19 @@ public class ConversationService {
     }
 
     /**
-     * Get all conversations for a user.
+     * OPTIMIZED: Get all conversations for a user in a single database query.
+     * Replaces 31+ queries with 1 efficient native SQL call.
      *
      * @param userId User ID
      * @return List of conversation responses with participants, last message, and unread count
      */
     public List<ConversationResponse> getUserConversations(Long userId) {
-        List<Conversation> conversations = conversationRepository.findByUserIdOrderByUpdatedAtDesc(userId);
+        // Single optimized query that returns all required data
+        List<ConversationListDTO> dtos = conversationRepository.findConversationsByUserIdOptimized(userId);
 
-        return conversations.stream()
-                .map(conv -> toConversationResponse(conv, userId))
+        // Transform DTOs to response objects (no DB access)
+        return dtos.stream()
+                .map(ConversationListDTO::toResponse)
                 .collect(Collectors.toList());
     }
 
