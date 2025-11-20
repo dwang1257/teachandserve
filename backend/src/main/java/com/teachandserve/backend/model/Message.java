@@ -23,7 +23,7 @@ public class Message {
     @JoinColumn(name = "conversation_id", nullable = false)
     private Conversation conversation;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_id", nullable = false)
     private User sender;
 
