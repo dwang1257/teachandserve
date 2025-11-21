@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -100,15 +101,25 @@ public class ProfileService {
 
         // Update required fields for completion (with XSS sanitization)
         profile.setBio(sanitizationService.sanitize(request.getBio()));
-        profile.setInterests(sanitizationService.sanitizePlainText(request.getInterests()));
-        profile.setGoals(sanitizationService.sanitize(request.getGoals()));
+        if (request.getInterests() != null) {
+            profile.setInterests(request.getInterests().stream()
+                    .map(sanitizationService::sanitizePlainText)
+                    .collect(Collectors.toList()));
+        }
+        if (request.getGoals() != null) {
+            profile.setGoals(request.getGoals().stream()
+                    .map(sanitizationService::sanitize)
+                    .collect(Collectors.toList()));
+        }
 
         // Update optional fields if provided (with XSS sanitization)
         if (request.getSkills() != null) {
-            profile.setSkills(sanitizationService.sanitizePlainText(request.getSkills()));
+            profile.setSkills(request.getSkills().stream()
+                    .map(sanitizationService::sanitizePlainText)
+                    .collect(Collectors.toList()));
         }
         if (request.getExperienceLevel() != null) {
-            profile.setExperienceLevel(sanitizationService.sanitizePlainText(request.getExperienceLevel()));
+            profile.setExperienceLevel(request.getExperienceLevel());
         }
         if (request.getLocation() != null) {
             profile.setLocation(sanitizationService.sanitizePlainText(request.getLocation()));
