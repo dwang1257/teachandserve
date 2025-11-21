@@ -280,7 +280,7 @@ public class MessageService {
                 message.getId(),
                 message.getConversation().getId(),
                 message.getSender().getId(),
-                message.getSender().getEmail(),
+                message.getSender().getFirstName() != null ? message.getSender().getFirstName() : message.getSender().getEmail(),
                 decryptedBody,
                 message.getCreatedAt(),
                 message.getEditedAt(),

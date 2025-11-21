@@ -6,6 +6,7 @@ const Header = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const displayName = user?.firstName && user.firstName.trim().length > 0 ? user.firstName : user?.email;
 
   // Don't show header on landing page (it has its own nav)
   if (location.pathname === '/') {
@@ -55,7 +56,7 @@ const Header = () => {
                 >
                   <div className="flex items-center space-x-2 cursor-pointer py-2">
                     <span className="text-gray-600 text-sm font-normal">
-                      {user.email}
+                      {displayName}
                     </span>
                     <svg 
                       className={`w-4 h-4 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} 

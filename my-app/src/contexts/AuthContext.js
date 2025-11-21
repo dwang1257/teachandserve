@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from '../config/axios';
 
 const AuthContext = createContext();
@@ -14,6 +14,36 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [profileStatus, setProfileStatus] = useState({ hasProfile: false, isComplete: false });
+  const [profileStatusLoading, setProfileStatusLoading] = useState(true);
+
+  const refreshProfileStatus = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setProfileStatus({ hasProfile: false, isComplete: false });
+      setProfileStatusLoading(false);
+      return;
+    }
+
+    try {
+      setProfileStatusLoading(true);
+      const response = await axios.get('/api/profile/me');
+
+      if (response.data.hasProfile === false) {
+        setProfileStatus({ hasProfile: false, isComplete: false });
+      } else {
+        const profile = response.data.profile || response.data;
+        setProfileStatus({
+          hasProfile: true,
+          isComplete: Boolean(profile.isProfileComplete)
+        });
+      }
+    } catch (error) {
+      setProfileStatus({ hasProfile: false, isComplete: false });
+    } finally {
+      setProfileStatusLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -22,16 +52,20 @@ export const AuthProvider = ({ children }) => {
       fetchUser();
     } else {
       setLoading(false);
+      setProfileStatusLoading(false);
     }
-  }, []);
+  }, [refreshProfileStatus]);
 
   const fetchUser = async () => {
     try {
       const response = await axios.get('/api/auth/me');
       setUser(response.data);
+      await refreshProfileStatus();
     } catch (error) {
       localStorage.removeItem('token');
       delete axios.defaults.headers.common['Authorization'];
+      setProfileStatus({ hasProfile: false, isComplete: false });
+      setProfileStatusLoading(false);
     }
     setLoading(false);
   };
@@ -44,6 +78,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', token);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setUser(user);
+      await refreshProfileStatus();
       
       return { success: true };
     } catch (error) {
@@ -93,6 +128,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', token);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setUser(user);
+      await refreshProfileStatus();
       
       return { success: true };
     } catch (error) {
@@ -134,6 +170,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     delete axios.defaults.headers.common['Authorization'];
     setUser(null);
+    setProfileStatus({ hasProfile: false, isComplete: false });
+    setProfileStatusLoading(false);
   };
 
   const value = {
@@ -142,7 +180,10 @@ export const AuthProvider = ({ children }) => {
     login,
     signup,
     logout,
-    loading
+    loading,
+    profileStatus,
+    profileStatusLoading,
+    refreshProfileStatus
   };
 
   return (

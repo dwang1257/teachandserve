@@ -63,7 +63,10 @@ public class ConversationService {
                 conversationRepository.findOneToOneConversation(userId, peerUserId);
 
         if (existingConversation.isPresent()) {
-            return existingConversation.get();
+            Conversation c = existingConversation.get();
+            // Initialize lazy participants collection
+            c.getParticipants().size();
+            return c;
         }
 
         // OPTIMIZED: Use proxy references instead of full User loading
@@ -141,11 +144,11 @@ public class ConversationService {
      * @param userId       Current user ID (for unread count)
      * @return ConversationResponse DTO
      */
-    private ConversationResponse toConversationResponse(Conversation conversation, Long userId) {
+    public ConversationResponse toConversationResponse(Conversation conversation, Long userId) {
         List<ParticipantDto> participants = conversation.getParticipants().stream()
                 .map(cp -> new ParticipantDto(
                         cp.getUser().getId(),
-                        cp.getUser().getEmail(), // Using email as name for now
+                        cp.getUser().getFirstName() != null ? cp.getUser().getFirstName() : cp.getUser().getEmail(),
                         cp.getUser().getEmail(),
                         null // avatarUrl not implemented yet
                 ))
