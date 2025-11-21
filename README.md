@@ -70,8 +70,7 @@ Teach & Serve is a mentorship platform that connects students from underrepresen
     - `email` (unique, login identity)
     - `password` (BCrypt‑hashed)
     - `role` (`MENTOR` or `MENTEE`)
-    - Optional profile name fields (`firstName`, `lastName`)
-    - Flags like `hasSeenCompletionPopup` to drive UX (e.g., profile completion popup).
+    - Profile name fields (`firstName`, `lastName`) used across the UI instead of raw emails once set.
   - `Role` enum distinguishes mentors vs mentees and drives role‑specific UX and matching.
   - `AuthController` exposes:
     - `/api/auth/signup` – register, validate, create `User`, return `AuthResponse { token, user }`
@@ -201,31 +200,32 @@ Teach & Serve is a mentorship platform that connects students from underrepresen
 - **Auth & Session**
   - `AuthContext`:
     - Loads authenticated user via `/api/auth/me` when a token exists.
-    - Provides `login`, `signup`, `logout`, and exposes `user` and `setUser` (so other components can update e.g. `hasSeenCompletionPopup`).
+    - Tracks profile completion status via `/api/profile/me` and exposes `profileStatus` plus a `refreshProfileStatus` helper.
+    - Provides `login`, `signup`, `logout`, and exposes `user` and `setUser`.
     - Stores JWT in `localStorage` and wires axios Authorization header.
+  - `ProtectedRoute`:
+    - Gates routes by authentication and (by default) requires a **completed profile**.
+    - Automatically redirects authenticated users with incomplete profiles to `/complete-profile`, except on profile setup routes.
 
 - **Dashboards**
   - `Dashboard`:
     - Chooses `MentorDashboard` or `MenteeDashboard` based on `user.role`.
   - `MentorDashboard` / `MenteeDashboard`:
     - Fetches `/api/profile/me` and `/api/matches/my-matches`.
-    - Shows key metrics (active mentees/mentors, sessions, goals).
-    - Shows:
-      - A **yellow** banner if the profile is missing or incomplete, linking to `/complete-profile`.
-      - A **green** “Profile Complete – Ready for matching!” popup once profile is complete; dismissed state is persisted via `/api/profile/popup-seen` and `user.hasSeenCompletionPopup`.
+    - Assume a **completed** profile (incomplete users are redirected to `/complete-profile` earlier in the flow).
+    - Show key metrics (active mentees/mentors, sessions, goals) and quick navigation into matches and messages.
 
 - **Messaging UI**
   - `Messages.js`:
     - Left sidebar:
-      - “Accepted Matches” section allowing a one‑click “start/continue conversation” for accepted matches (pulls from `/api/matches/my-matches`).
       - “Active Conversations” section listing conversations with:
         - Avatar initial.
-        - Participant email.
+        - Participant **name** (first name when available).
         - Last message preview and relative time.
         - Unread badge for each conversation.
       - Empty state that prompts users to go to `/matches`.
     - Right side:
-      - Chat header with participant avatar, email, and WebSocket online/offline indicator.
+      - Chat header with participant avatar, name, and WebSocket online/offline indicator.
       - Scrollable messages area with bubble styling (right‑aligned for current user, left for peer).
       - Optimistic UI for sending messages:
         - Adds a temporary “Sending…” bubble immediately.
@@ -235,14 +235,17 @@ Teach & Serve is a mentorship platform that connects students from underrepresen
       - Subscribes to conversation updates & messages via WebSockets.
       - Calls `/api/conversations/{id}/read` with the last message ID to clear unread counts.
       - Minimizes redundant API calls with carefully scoped `useEffect` dependencies and checks.
+    - Conversation creation:
+      - Users start conversations from the matches page via a **Send Message** button, which deep‑links to `/messages?userId=<peerId>`; the backend creates or reuses a 1‑to‑1 conversation, and the UI immediately focuses that thread.
 
 - **Profile Flows**
   - `CompleteProfile`:
-    - Focused, minimal completion form for initial onboarding.
+    - Focused, minimal completion form for initial onboarding (first name, last name, bio, interests, goals).
     - Validates:
       - Bio length (≥ 50 chars).
       - At least one interest and one goal.
-    - On success, POSTs to `/api/profile/complete`, then navigates to `/dashboard` with a success message.
+      - Non‑empty first and last name.
+    - On success, POSTs to `/api/profile/complete`, refreshes profile status, then navigates to `/dashboard` with a success message.
   - `ProfileSetup`:
     - Full editor for ongoing profile refinement (bio, interests, goals, skills, experience level, location, timezone, availability, profile image).
     - Loads existing profile via `/api/profile/me` and pre‑populates fields.
@@ -255,7 +258,7 @@ Teach & Serve is a mentorship platform that connects students from underrepresen
     - Brand logo/title (Teach & Serve).
     - When authenticated:
       - “Messages” icon link.
-      - Email dropdown on hover with:
+      - Name dropdown (first name or email) on hover with:
         - “View Profile” link (`/profile/view`).
         - Centered “Log out” button.
       - Role badge (“Mentor” or “Mentee”).
@@ -363,9 +366,9 @@ All services expose their default ports to your host so you can still connect wi
   - Optimistic UI and unread counts; read receipts persisted in DB.
 
 - **User experience enhancements**:
-  - Mentor/Mentee dashboards with metrics and status banners.
-  - “Profile complete” popup that only appears once per user (backed by `hasSeenCompletionPopup`).
-  - Hover dropdown on the header email with quick access to “View Profile” and Log out.
+  - Mentor/Mentee dashboards that assume a completed profile and surface clear metrics and navigation.
+  - A streamlined onboarding flow: after signup/login, users are routed directly to a focused profile completion screen until their profile is ready for matching.
+  - Hover dropdown on the header name with quick access to “View Profile” and Log out.
   - Match notifications for new matches in a non‑intrusive banner.
 
 This README is meant as a high‑level guide to the architecture and behavior of the Teach & Serve codebase. For more detail, refer to the source files referenced above in `backend/src/main/java/com/teachandserve/backend/**` and `my-app/src/**`.
