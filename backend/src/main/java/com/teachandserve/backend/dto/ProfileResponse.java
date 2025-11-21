@@ -22,6 +22,8 @@ public class ProfileResponse {
     private String profileImageUrl;
     private Boolean isProfileComplete;
     private Boolean isAvailableForMatching;
+    private String firstName;
+    private String lastName;
     
     // Constructors
     public ProfileResponse() {}
@@ -145,5 +147,21 @@ public class ProfileResponse {
     
     public void setIsAvailableForMatching(Boolean isAvailableForMatching) {
         this.isAvailableForMatching = isAvailableForMatching;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 }

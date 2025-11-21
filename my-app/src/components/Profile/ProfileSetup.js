@@ -4,10 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import axios from '../../config/axios';
 
 const ProfileSetup = () => {
-  const { user } = useAuth();
+  const { user, setUser, refreshProfileStatus } = useAuth();
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
     bio: '',
     interests: [],
     goals: [],
@@ -37,6 +39,8 @@ const ProfileSetup = () => {
       if (response.data.profile) {
         const profile = response.data.profile;
         setFormData({
+          firstName: profile.firstName || user?.firstName || '',
+          lastName: profile.lastName || user?.lastName || '',
           bio: profile.bio || '',
           interests: profile.interests || [],
           goals: profile.goals || [],
@@ -47,6 +51,28 @@ const ProfileSetup = () => {
           availability: profile.availability || '',
           profileImageUrl: profile.profileImageUrl || ''
         });
+      } else if (response.data.hasProfile === false) {
+        setFormData(prev => ({
+          ...prev,
+          firstName: user?.firstName || '',
+          lastName: user?.lastName || ''
+        }));
+      } else {
+        const profile = response.data;
+        setFormData(prev => ({
+          ...prev,
+          firstName: profile.firstName || prev.firstName,
+          lastName: profile.lastName || prev.lastName,
+          bio: profile.bio || '',
+          interests: profile.interests || [],
+          goals: profile.goals || [],
+          skills: profile.skills || [],
+          experienceLevel: profile.experienceLevel || '',
+          location: profile.location || '',
+          timezone: profile.timezone || '',
+          availability: profile.availability || '',
+          profileImageUrl: profile.profileImageUrl || ''
+        }));
       }
     } catch (error) {
       console.error('Failed to load profile:', error);
@@ -85,7 +111,11 @@ const ProfileSetup = () => {
     setSuccess('');
 
     try {
-      const response = await axios.post('/api/profile/me', formData);
+      await axios.post('/api/profile/me', formData);
+      if (setUser) {
+        setUser(prev => prev ? { ...prev, firstName: formData.firstName, lastName: formData.lastName } : prev);
+      }
+      await refreshProfileStatus();
       setSuccess('Profile saved successfully!');
       setTimeout(() => {
         navigate('/dashboard');
@@ -151,6 +181,37 @@ const ProfileSetup = () => {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Name Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                    First Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="firstName"
+                    name="firstName"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                    Last Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="lastName"
+                    name="lastName"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </div>
               {/* Bio Section */}
               <div>
                 <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
@@ -176,14 +237,14 @@ const ProfileSetup = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Interests <span className="text-red-500">*</span>
                 </label>
-                <div className="flex mb-2">
+              <div className="flex flex-col sm:flex-row gap-2 mb-2">
                   <input
                     type="text"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder={placeholders.interests}
                     value={currentInterest}
                     onChange={(e) => setCurrentInterest(e.target.value)}
-                    onKeyPress={(e) => {
+                  onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         addToList('interests', currentInterest, setCurrentInterest);
@@ -193,9 +254,9 @@ const ProfileSetup = () => {
                   <button
                     type="button"
                     onClick={() => addToList('interests', currentInterest, setCurrentInterest)}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-r-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-auto"
                   >
-                    Add
+                  Add Interest
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -222,14 +283,14 @@ const ProfileSetup = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Goals <span className="text-red-500">*</span>
                 </label>
-                <div className="flex mb-2">
+              <div className="flex flex-col sm:flex-row gap-2 mb-2">
                   <input
                     type="text"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder={placeholders.goals}
                     value={currentGoal}
                     onChange={(e) => setCurrentGoal(e.target.value)}
-                    onKeyPress={(e) => {
+                  onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         addToList('goals', currentGoal, setCurrentGoal);
@@ -239,9 +300,9 @@ const ProfileSetup = () => {
                   <button
                     type="button"
                     onClick={() => addToList('goals', currentGoal, setCurrentGoal)}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-r-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-auto"
                   >
-                    Add
+                  Add Goal
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -268,14 +329,14 @@ const ProfileSetup = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Skills
                 </label>
-                <div className="flex mb-2">
+              <div className="flex flex-col sm:flex-row gap-2 mb-2">
                   <input
                     type="text"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder={placeholders.skills}
                     value={currentSkill}
                     onChange={(e) => setCurrentSkill(e.target.value)}
-                    onKeyPress={(e) => {
+                  onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         addToList('skills', currentSkill, setCurrentSkill);
@@ -285,9 +346,9 @@ const ProfileSetup = () => {
                   <button
                     type="button"
                     onClick={() => addToList('skills', currentSkill, setCurrentSkill)}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-r-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-auto"
                   >
-                    Add
+                  Add Skill
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">

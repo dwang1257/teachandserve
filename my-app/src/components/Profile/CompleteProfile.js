@@ -4,10 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import axios from '../../config/axios';
 
 const CompleteProfile = () => {
-  const { user } = useAuth();
+  const { user, setUser, refreshProfileStatus } = useAuth();
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
     bio: '',
     interests: [],
     goals: []
@@ -48,6 +50,18 @@ const CompleteProfile = () => {
     setLoading(true);
     setError('');
 
+    if (!formData.firstName.trim()) {
+      setError('First name is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.lastName.trim()) {
+      setError('Last name is required');
+      setLoading(false);
+      return;
+    }
+
     if (formData.bio.length < 50) {
       setError('Bio must be at least 50 characters long');
       setLoading(false);
@@ -68,9 +82,13 @@ const CompleteProfile = () => {
 
     try {
       await axios.post('/api/profile/complete', formData);
+      if (setUser) {
+        setUser(prev => prev ? { ...prev, firstName: formData.firstName, lastName: formData.lastName } : prev);
+      }
+      await refreshProfileStatus();
       
-      // Redirect to dashboard after successful profile completion
       navigate('/dashboard', { 
+        replace: true,
         state: { message: 'Profile completed! Matching with mentors/mentees...' }
       });
     } catch (error) {
@@ -78,12 +96,6 @@ const CompleteProfile = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSkip = () => {
-    navigate('/dashboard', { 
-      state: { warning: 'Your profile is incomplete — you won\'t be matched until it\'s submitted.' }
-    });
   };
 
   const getRoleSpecificPlaceholders = () => {
@@ -124,6 +136,39 @@ const CompleteProfile = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Name Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                  First Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="firstName"
+                  name="firstName"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Jane"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div>
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                  Last Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="lastName"
+                  name="lastName"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Doe"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
             {/* Bio Section */}
             <div>
               <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
@@ -149,14 +194,14 @@ const CompleteProfile = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Your Interests <span className="text-red-500">*</span>
               </label>
-              <div className="flex mb-2">
+              <div className="flex flex-col sm:flex-row gap-2 mb-2">
                 <input
                   type="text"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder={placeholders.interests}
                   value={currentInterest}
                   onChange={(e) => setCurrentInterest(e.target.value)}
-                  onKeyPress={(e) => {
+                  onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
                       addToList('interests', currentInterest, setCurrentInterest);
@@ -166,9 +211,9 @@ const CompleteProfile = () => {
                 <button
                   type="button"
                   onClick={() => addToList('interests', currentInterest, setCurrentInterest)}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-r-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-auto"
                 >
-                  Add
+                  Add Interest
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -195,14 +240,14 @@ const CompleteProfile = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Your Goals <span className="text-red-500">*</span>
               </label>
-              <div className="flex mb-2">
+              <div className="flex flex-col sm:flex-row gap-2 mb-2">
                 <input
                   type="text"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder={placeholders.goals}
                   value={currentGoal}
                   onChange={(e) => setCurrentGoal(e.target.value)}
-                  onKeyPress={(e) => {
+                  onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
                       addToList('goals', currentGoal, setCurrentGoal);
@@ -212,9 +257,9 @@ const CompleteProfile = () => {
                 <button
                   type="button"
                   onClick={() => addToList('goals', currentGoal, setCurrentGoal)}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-r-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-auto"
                 >
-                  Add
+                  Add Goal
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -261,15 +306,8 @@ const CompleteProfile = () => {
               </div>
             </div>
 
-            {/* Submit and Skip Buttons */}
-            <div className="flex justify-between space-x-4">
-              <button
-                type="button"
-                onClick={handleSkip}
-                className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                Skip for Now
-              </button>
+            {/* Submit Button */}
+            <div className="flex justify-end">
               <button
                 type="submit"
                 disabled={loading}

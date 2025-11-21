@@ -67,7 +67,12 @@ public class AuthController {
             String jwt = jwtUtil.generateToken(user);
             
             AuthResponse.UserInfo userInfo = new AuthResponse.UserInfo(
-                    user.getId(), user.getEmail(), user.getRole(), user.isHasSeenCompletionPopup());
+                    user.getId(),
+                    user.getEmail(),
+                    user.getRole(),
+                    user.isHasSeenCompletionPopup(),
+                    user.getFirstName(),
+                    user.getLastName());
             
             return ResponseEntity.ok(new AuthResponse(jwt, userInfo));
         } catch (Exception e) {
@@ -99,7 +104,12 @@ public class AuthController {
             String jwt = jwtUtil.generateToken(user);
             
             AuthResponse.UserInfo userInfo = new AuthResponse.UserInfo(
-                    user.getId(), user.getEmail(), user.getRole(), user.isHasSeenCompletionPopup());
+                    user.getId(),
+                    user.getEmail(),
+                    user.getRole(),
+                    user.isHasSeenCompletionPopup(),
+                    user.getFirstName(),
+                    user.getLastName());
             
             return ResponseEntity.ok(new AuthResponse(jwt, userInfo));
         } catch (Exception e) {
@@ -121,7 +131,12 @@ public class AuthController {
         User user = (User) authentication.getPrincipal();
         
         AuthResponse.UserInfo userInfo = new AuthResponse.UserInfo(
-                user.getId(), user.getEmail(), user.getRole(), user.isHasSeenCompletionPopup());
+                user.getId(),
+                user.getEmail(),
+                user.getRole(),
+                user.isHasSeenCompletionPopup(),
+                user.getFirstName(),
+                user.getLastName());
         
         return ResponseEntity.ok(userInfo);
     }

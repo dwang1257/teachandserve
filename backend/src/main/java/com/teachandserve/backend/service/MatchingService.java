@@ -45,7 +45,11 @@ public class MatchingService {
     public List<ProfileResponse> findMatchingMentors(Long menteeUserId, int limit) {
         // Get mentee's profile
         UserProfile menteeProfile = profileRepository.findByUserId(menteeUserId)
-                .orElseThrow(() -> new RuntimeException("Mentee profile not found"));
+                .orElse(null);
+        
+        if (menteeProfile == null) {
+            return new ArrayList<>();
+        }
         
         if (menteeProfile.getBioEmbedding() == null) {
             // Fallback to basic matching if no embedding available
@@ -82,7 +86,11 @@ public class MatchingService {
     public List<ProfileResponse> findMatchingMentees(Long mentorUserId, int limit) {
         // Get mentor's profile
         UserProfile mentorProfile = profileRepository.findByUserId(mentorUserId)
-                .orElseThrow(() -> new RuntimeException("Mentor profile not found"));
+                .orElse(null);
+        
+        if (mentorProfile == null) {
+            return new ArrayList<>();
+        }
         
         if (mentorProfile.getBioEmbedding() == null) {
             // Fallback to basic matching if no embedding available

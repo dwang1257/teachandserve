@@ -18,20 +18,58 @@ import MentorProfileForm from './components/Forms/MentorForm.tsx';
 import './App.css';
 
 const AppRoutes = () => {
-  const { user } = useAuth();
+  const { user, loading, profileStatus, profileStatusLoading } = useAuth();
+  const requiresProfileCompletion = user && profileStatus && !profileStatus.isComplete;
+
+  if (loading || profileStatusLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
       <Header />
-      {user && <NotificationBanner />}
+      {user && profileStatus?.isComplete && <NotificationBanner />}
       <Routes>
-        <Route path="/" element={user ? <Navigate to="/dashboard" /> : <LandingPage />} />
-        <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
-        <Route path="/signup" element={user ? <Navigate to="/dashboard" /> : <Signup />} />
+        <Route
+          path="/"
+          element={
+            user
+              ? requiresProfileCompletion
+                ? <Navigate to="/complete-profile" />
+                : <Navigate to="/dashboard" />
+              : <LandingPage />
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            user
+              ? requiresProfileCompletion
+                ? <Navigate to="/complete-profile" />
+                : <Navigate to="/dashboard" />
+              : <Login />
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            user
+              ? requiresProfileCompletion
+                ? <Navigate to="/complete-profile" />
+                : <Navigate to="/dashboard" />
+              : <Signup />
+          }
+        />
         <Route 
           path="/complete-profile" 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowIncompleteProfile>
               <CompleteProfile />
             </ProtectedRoute>
           } 
@@ -39,7 +77,7 @@ const AppRoutes = () => {
         <Route 
           path="/profile/setup" 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowIncompleteProfile>
               <ProfileSetup />
             </ProtectedRoute>
           } 

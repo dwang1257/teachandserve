@@ -87,6 +87,18 @@ public class ProfileController {
                     "message", "At least one goal is required"
                 ));
             }
+
+            if (request.getFirstName() == null || request.getFirstName().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "message", "First name is required"
+                ));
+            }
+
+            if (request.getLastName() == null || request.getLastName().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "message", "Last name is required"
+                ));
+            }
             
             ProfileResponse profile = profileService.completeProfile(user.getId(), request);
             

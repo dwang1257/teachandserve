@@ -54,9 +54,7 @@ public class ConversationController {
             Conversation conversation = conversationService.getOrCreate1to1Conversation(
                     user.getId(), request.getPeerUserId());
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("id", conversation.getId());
-            response.put("createdAt", conversation.getCreatedAt());
+            ConversationResponse response = conversationService.toConversationResponse(conversation, user.getId());
 
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {

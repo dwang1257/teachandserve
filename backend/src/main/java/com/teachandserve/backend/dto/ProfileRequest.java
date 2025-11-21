@@ -27,6 +27,10 @@ public class ProfileRequest {
     private String availability;
     
     private String profileImageUrl;
+
+    private String firstName;
+
+    private String lastName;
     
     // Constructors
     public ProfileRequest() {}
@@ -108,5 +112,21 @@ public class ProfileRequest {
     
     public void setProfileImageUrl(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 }

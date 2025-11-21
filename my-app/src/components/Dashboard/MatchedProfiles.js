@@ -29,8 +29,8 @@ const MatchedProfiles = () => {
       // For each match, get the profile details
       const profilePromises = matchesData.map(async (match) => {
         try {
-          const targetUserId = user.role === 'MENTOR' ? match.menteeProfile?.user?.id : match.mentorProfile?.user?.id;
           const targetProfile = user.role === 'MENTOR' ? match.menteeProfile : match.mentorProfile;
+          const targetUserId = targetProfile?.userId;
 
           if (targetProfile) {
             return {
@@ -105,19 +105,21 @@ const MatchedProfiles = () => {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <div className="flex justify-between items-center">
-            <div>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="text-center md:text-left">
               <h1 className="text-3xl font-bold text-gray-900">{roleTitle}</h1>
               <p className="mt-2 text-gray-600">
                 View your matched {oppositeRole} and their profiles.
               </p>
             </div>
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-            >
-              Back to Dashboard
-            </button>
+            <div className="flex justify-center md:justify-end">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Back to Dashboard
+              </button>
+            </div>
           </div>
         </div>
 
@@ -169,66 +171,63 @@ const MatchedProfiles = () => {
                   if (!profile) return null;
                   
                   return (
-                    <div key={matchData.id || index} className="border border-gray-200 rounded-lg p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-4">
-                          {profile.profileImageUrl && (
-                            <img
-                              className="h-16 w-16 rounded-full object-cover"
-                              src={profile.profileImageUrl}
-                              alt={`${profile.user?.email || 'User'} profile`}
-                            />
-                          )}
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                              <h3 className="text-lg font-medium text-gray-900">
-                                {profile.user?.email || 'Anonymous User'}
-                              </h3>
-                              {matchData.matchScore && (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                  {(matchData.matchScore * 100).toFixed(0)}% match
-                                </span>
-                              )}
-                            </div>
-                            {profile.experienceLevel && (
-                              <p className="text-sm text-gray-600 capitalize">
-                                {profile.experienceLevel.toLowerCase()} level
-                              </p>
-                            )}
-                            {profile.location && (
-                              <p className="text-sm text-gray-600 flex items-center">
-                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                                {profile.location}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div>
-                          {matchData.status === 'PENDING' && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                              Pending
+                    <div key={matchData.id || index} className="border border-gray-200 rounded-xl p-6 bg-white space-y-4">
+                      <div className="flex items-start space-x-4">
+                        {profile.profileImageUrl && (
+                          <img
+                            className="h-16 w-16 rounded-full object-cover"
+                            src={profile.profileImageUrl}
+                            alt={`${profile.firstName || 'User'} profile`}
+                          />
+                        )}
+                        <div className="flex-1 text-left">
+                          <h3 className="text-lg font-medium text-gray-900">
+                            {profile.firstName || 'Anonymous User'}
+                          </h3>
+                          {matchData.matchScore && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 mt-2 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              {(matchData.matchScore * 100).toFixed(0)}% match
                             </span>
                           )}
-                          {matchData.status === 'ACCEPTED' && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              Accepted
-                            </span>
+                          {profile.experienceLevel && (
+                            <p className="text-sm text-gray-600 capitalize mt-2">
+                              {profile.experienceLevel.toLowerCase()} level
+                            </p>
                           )}
-                          {matchData.status === 'REJECTED' && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                              Rejected
-                            </span>
+                          {profile.location && (
+                            <p className="text-sm text-gray-600 flex items-center mt-1">
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              {profile.location}
+                            </p>
                           )}
                         </div>
                       </div>
+
+                      <div className="flex flex-wrap gap-2 text-left">
+                        {matchData.status === 'PENDING' && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            Pending
+                          </span>
+                        )}
+                        {matchData.status === 'ACCEPTED' && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Accepted
+                          </span>
+                        )}
+                        {matchData.status === 'REJECTED' && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            Rejected
+                          </span>
+                        )}
+                      </div>
                       
                       {profile.bio && (
-                        <div className="mt-4">
-                          <h4 className="text-sm font-medium text-gray-900 mb-2">About</h4>
-                          <p className="text-sm text-gray-700 line-clamp-3">
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900 mb-2 text-left">About</h4>
+                          <p className="text-sm text-gray-700 text-left">
                             {profile.bio.length > 200 
                               ? `${profile.bio.substring(0, 200)}...` 
                               : profile.bio
@@ -237,9 +236,9 @@ const MatchedProfiles = () => {
                         </div>
                       )}
                       
-                      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {profile.interests && profile.interests.length > 0 && (
-                          <div>
+                          <div className="text-left">
                             <h4 className="text-sm font-medium text-gray-900 mb-2">Interests</h4>
                             <div className="flex flex-wrap gap-1">
                               {profile.interests.slice(0, 3).map((interest, idx) => (
@@ -260,7 +259,7 @@ const MatchedProfiles = () => {
                         )}
                         
                         {profile.goals && profile.goals.length > 0 && (
-                          <div>
+                          <div className="text-left">
                             <h4 className="text-sm font-medium text-gray-900 mb-2">Goals</h4>
                             <div className="flex flex-wrap gap-1">
                               {profile.goals.slice(0, 2).map((goal, idx) => (
@@ -281,7 +280,7 @@ const MatchedProfiles = () => {
                         )}
                       </div>
                       
-                      <div className="mt-4 flex justify-end space-x-3">
+                      <div className="mt-4 flex flex-wrap gap-3 justify-start">
                         {matchData.status === 'PENDING' && (
                           <>
                             <button
@@ -301,7 +300,7 @@ const MatchedProfiles = () => {
                         {matchData.status === 'ACCEPTED' && (
                           <>
                             <button
-                              onClick={() => navigate(`/messages?userId=${profile.user?.id}`)}
+                              onClick={() => navigate(`/messages?userId=${profile.userId}`)}
                               className="px-4 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                             >
                               Send Message

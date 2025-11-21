@@ -11,7 +11,6 @@ const Messages = () => {
   const messagesEndRef = useRef(null);
 
   const [conversations, setConversations] = useState([]);
-  const [acceptedMatches, setAcceptedMatches] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -23,6 +22,7 @@ const Messages = () => {
 
   const subscriptionsRef = useRef([]);
   const markAsReadTimeoutRef = useRef(null);
+  const currentUserName = user?.firstName && user.firstName.trim().length > 0 ? user.firstName : user.email;
 
   // Initialize WebSocket connection
   useEffect(() => {
@@ -64,10 +64,7 @@ const Messages = () => {
 
     const init = async () => {
         if (mounted) {
-            await Promise.all([
-                loadConversations(),
-                loadAcceptedMatches()
-            ]);
+            await loadConversations();
         }
     };
     init();
@@ -145,19 +142,6 @@ const Messages = () => {
     loadConversations();
   };
 
-  const loadAcceptedMatches = async () => {
-    try {
-      const response = await axios.get('/api/matches/my-matches');
-      const matches = response.data || [];
-
-      // Filter for accepted matches only
-      const accepted = matches.filter(m => m.status === 'ACCEPTED');
-      setAcceptedMatches(accepted);
-    } catch (error) {
-      console.error('Failed to load matches:', error);
-    }
-  };
-
   const loadConversations = async () => {
     try {
       setLoading(true);
@@ -213,46 +197,6 @@ const Messages = () => {
     }
   };
 
-  const startConversationWithMatch = async (matchUserId) => {
-    try {
-      setError(null);
-
-      if (!matchUserId) {
-        setError('Invalid user ID');
-        return;
-      }
-
-      // Check if conversation already exists
-      // Note: participants array only contains OTHER participants, not current user
-      let existingConvo = conversations.find(c =>
-        c.participants.some(p => p.id === matchUserId)
-      );
-
-      if (existingConvo) {
-        setSelectedConversation(existingConvo);
-        return;
-      }
-
-      // Create new conversation
-      const createResponse = await axios.post('/api/conversations', {
-        peerUserId: matchUserId
-      });
-
-      // Use the created conversation directly instead of reloading
-      const newConvo = createResponse.data;
-
-      // Add to conversations list
-      setConversations(prev => [...prev, newConvo]);
-
-      // Select the newly created conversation
-      setSelectedConversation(newConvo);
-    } catch (error) {
-      console.error('Failed to start conversation:', error);
-      const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message || 'Failed to start conversation';
-      setError(errorMsg);
-    }
-  };
-
   const loadMessages = async (conversationId) => {
     try {
       const response = await axios.get(`/api/conversations/${conversationId}`, {
@@ -285,7 +229,7 @@ const Messages = () => {
         id: `temp-${Date.now()}`, // Temporary ID
         conversationId: selectedConversation.id,
         senderId: user.id,
-        senderName: user.email,
+        senderName: currentUserName,
         body: messageBody,
         createdAt: new Date().toISOString(),
         readBy: [],
@@ -369,8 +313,11 @@ const Messages = () => {
       return 'Unknown';
     }
     const otherParticipant = conversation.participants[0]; // API only returns other participant
-    return otherParticipant?.email || otherParticipant?.name || 'Unknown';
+    return otherParticipant?.name || otherParticipant?.email || 'Unknown';
   };
+
+  const activeParticipantName = selectedConversation ? getParticipantName(selectedConversation) : null;
+  const activeParticipantInitial = activeParticipantName ? activeParticipantName.charAt(0).toUpperCase() : '?';
 
   if (loading) {
     return (
@@ -402,63 +349,14 @@ const Messages = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {/* Accepted Matches Section */}
-            {acceptedMatches.length > 0 && (
-              <div className="border-b border-gray-200">
-                <div className="px-4 py-2 bg-gray-50">
-                  <h3 className="text-xs font-semibold text-gray-600 uppercase">Accepted Matches</h3>
-                </div>
-                {acceptedMatches.map((match) => {
-                  const profile = user.role === 'MENTOR' ? match.menteeProfile : match.mentorProfile;
-                  const matchUserId = profile?.userId;
-                  const name = profile?.email || 'Unknown';
-
-                  // Skip if matchUserId is not valid
-                  if (!matchUserId) {
-                    return null;
-                  }
-
-                  const hasConversation = conversations.some(c =>
-                    c.participants.some(p => p.id === matchUserId)
-                  );
-
-                  return (
-                    <div
-                      key={match.id}
-                      onClick={() => startConversationWithMatch(matchUserId)}
-                      className="p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0">
-                          <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center">
-                            <span className="text-white font-semibold text-lg">
-                              {name.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 truncate">
-                            {name}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {hasConversation ? 'Continue conversation' : 'Start messaging'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Active Conversations Section */}
-            {conversations.length > 0 && (
+            {conversations.length > 0 ? (
               <div>
                 <div className="px-4 py-2 bg-gray-50">
                   <h3 className="text-xs font-semibold text-gray-600 uppercase">Active Conversations</h3>
                 </div>
                 {conversations.map((convo) => {
                   const participant = getParticipantName(convo);
+                  const participantInitial = participant ? participant.charAt(0).toUpperCase() : '?';
                   return (
                     <div
                       key={convo.id}
@@ -471,7 +369,7 @@ const Messages = () => {
                         <div className="flex-shrink-0">
                           <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center">
                             <span className="text-white font-semibold text-lg">
-                              {participant.charAt(0).toUpperCase()}
+                              {participantInitial}
                             </span>
                           </div>
                         </div>
@@ -500,12 +398,9 @@ const Messages = () => {
                   );
                 })}
               </div>
-            )}
-
-            {/* Empty State */}
-            {conversations.length === 0 && acceptedMatches.length === 0 && (
+            ) : (
               <div className="p-4 text-center text-gray-500">
-                <p className="text-sm">No matches or conversations yet</p>
+                <p className="text-sm">No conversations yet</p>
                 <button
                   onClick={() => navigate('/matches')}
                   className="mt-2 text-sm text-gray-900 hover:text-gray-700"
@@ -526,12 +421,12 @@ const Messages = () => {
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center">
                     <span className="text-white font-semibold">
-                      {getParticipantName(selectedConversation).charAt(0).toUpperCase()}
+                      {activeParticipantInitial}
                     </span>
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-gray-900">
-                      {getParticipantName(selectedConversation)}
+                      {activeParticipantName || 'Unknown'}
                     </h3>
                     <p className="text-xs text-gray-500">
                       {wsConnected ? 'Active now' : 'Offline'}

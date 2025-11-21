@@ -3,7 +3,6 @@ package com.teachandserve.backend.service;
 import com.teachandserve.backend.dto.ProfileRequest;
 import com.teachandserve.backend.dto.ProfileResponse;
 import com.teachandserve.backend.events.ProfileCompletedEvent;
-import com.teachandserve.backend.model.Role;
 import com.teachandserve.backend.model.User;
 import com.teachandserve.backend.model.UserProfile;
 import com.teachandserve.backend.repository.UserProfileRepository;
@@ -52,6 +51,19 @@ public class ProfileService {
         UserProfile profile = profileRepository.findByUserId(userId)
                 .orElse(new UserProfile(user));
         
+        boolean userUpdated = false;
+        if (request.getFirstName() != null && !request.getFirstName().trim().isEmpty()) {
+            user.setFirstName(sanitizationService.sanitizePlainText(request.getFirstName()));
+            userUpdated = true;
+        }
+        if (request.getLastName() != null && !request.getLastName().trim().isEmpty()) {
+            user.setLastName(sanitizationService.sanitizePlainText(request.getLastName()));
+            userUpdated = true;
+        }
+        if (userUpdated) {
+            userRepository.save(user);
+        }
+        
         // Update profile fields
         profile.setBio(request.getBio());
         profile.setInterests(request.getInterests());
@@ -98,6 +110,13 @@ public class ProfileService {
         
         UserProfile profile = profileRepository.findByUserId(userId)
                 .orElse(new UserProfile(user));
+
+        if (request.getFirstName() != null) {
+            user.setFirstName(sanitizationService.sanitizePlainText(request.getFirstName()));
+        }
+        if (request.getLastName() != null) {
+            user.setLastName(sanitizationService.sanitizePlainText(request.getLastName()));
+        }
 
         // Update required fields for completion (with XSS sanitization)
         profile.setBio(sanitizationService.sanitize(request.getBio()));
@@ -153,6 +172,7 @@ public class ProfileService {
         profile.setBioEmbedding(embedding);
         
         profile = profileRepository.save(profile);
+        userRepository.save(user);
         
         // Publish profile completion event for automatic matching
         try {
@@ -165,7 +185,13 @@ public class ProfileService {
     }
     
     private boolean isProfileComplete(UserProfile profile) {
-        return profile.getBio() != null && !profile.getBio().trim().isEmpty() &&
+        User profileUser = profile.getUser();
+        boolean hasNames = profileUser != null &&
+                profileUser.getFirstName() != null && !profileUser.getFirstName().trim().isEmpty() &&
+                profileUser.getLastName() != null && !profileUser.getLastName().trim().isEmpty();
+
+        return hasNames &&
+               profile.getBio() != null && !profile.getBio().trim().isEmpty() &&
                profile.getInterests() != null && !profile.getInterests().isEmpty() &&
                profile.getGoals() != null && !profile.getGoals().isEmpty() &&
                profile.getExperienceLevel() != null;
@@ -188,6 +214,8 @@ public class ProfileService {
         response.setProfileImageUrl(profile.getProfileImageUrl());
         response.setIsProfileComplete(profile.getIsProfileComplete());
         response.setIsAvailableForMatching(profile.getIsAvailableForMatching());
+        response.setFirstName(profile.getUser().getFirstName());
+        response.setLastName(profile.getUser().getLastName());
         return response;
     }
 }
