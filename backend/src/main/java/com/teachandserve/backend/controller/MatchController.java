@@ -2,6 +2,8 @@ package com.teachandserve.backend.controller;
 
 import com.teachandserve.backend.dto.MatchResponse;
 import com.teachandserve.backend.service.MatchingService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -14,7 +16,9 @@ import java.util.List;
 @RequestMapping("/api/matches")
 @CrossOrigin(origins = "*")
 public class MatchController {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(MatchController.class);
+
     @Autowired
     private MatchingService matchingService;
     
@@ -27,15 +31,14 @@ public class MatchController {
             }
             
             String email = authentication.getName();
-            System.out.println("Getting matches for user: " + email);
-            
+            log.info("Getting matches for user: {}", email);
+
             List<MatchResponse> matches = matchingService.getMatchesForUser(email);
-            System.out.println("Found " + matches.size() + " matches");
+            log.debug("Found {} matches for user: {}", matches.size(), email);
             
             return ResponseEntity.ok(matches);
         } catch (Exception e) {
-            System.err.println("Error getting matches: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Error getting matches for user", e);
             throw e;
         }
     }
@@ -54,15 +57,14 @@ public class MatchController {
             }
 
             String email = authentication.getName();
-            System.out.println("User " + email + " accepting match " + matchId);
+            log.info("User {} accepting match {}", email, matchId);
 
             MatchResponse updatedMatch = matchingService.acceptMatch(matchId, email);
             return ResponseEntity.ok(updatedMatch);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            System.err.println("Error accepting match: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Error accepting match {}", matchId, e);
             return ResponseEntity.status(500).body("Failed to accept match");
         }
     }
@@ -76,15 +78,14 @@ public class MatchController {
             }
 
             String email = authentication.getName();
-            System.out.println("User " + email + " rejecting match " + matchId);
+            log.info("User {} rejecting match {}", email, matchId);
 
             MatchResponse updatedMatch = matchingService.rejectMatch(matchId, email);
             return ResponseEntity.ok(updatedMatch);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            System.err.println("Error rejecting match: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Error rejecting match {}", matchId, e);
             return ResponseEntity.status(500).body("Failed to reject match");
         }
     }

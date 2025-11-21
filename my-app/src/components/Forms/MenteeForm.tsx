@@ -30,7 +30,6 @@ const handleSubmit = async (e: React.FormEvent) => {
       throw new Error('Failed to submit form');
     }
     const data = await response.json();
-    console.log('Works:', data);
   } catch (error) {
     console.error('Error:', error);
   }
@@ -108,7 +107,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
       <button
         type="submit"
-        className="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded hover:bg-blue-700 transition"
+        className="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded hover:bg-indigo-700 transition"
       >
         Submit
       </button>

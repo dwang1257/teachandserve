@@ -30,7 +30,6 @@ export default function MentorProfileForm() {
       });
       if (!response.ok) throw new Error('Failed to submit form');
       const data = await response.json();
-      console.log('Success:', data);
     } catch (error) {
       console.error('Error:', error);
     }
@@ -94,7 +93,7 @@ export default function MentorProfileForm() {
 
       <button
         type="submit"
-        className="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded hover:bg-blue-700 transition"
+        className="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded hover:bg-indigo-700 transition"
       >
         Submit
       </button>

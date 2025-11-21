@@ -11,6 +11,7 @@ const MentorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(location.state?.message || '');
   const [warning, setWarning] = useState(location.state?.warning || '');
+  const [incompleteProfileDismissed, setIncompleteProfileDismissed] = useState(false);
 
   // Check user state for popup seen status
   const showCompletionPopup = !loading && profile && profile.isProfileComplete && !user?.hasSeenCompletionPopup;
@@ -119,10 +120,10 @@ const MentorDashboard = () => {
             </div>
           )}
           
-          {!loading && (!profile || !profile.isProfileComplete) && (
+          {!loading && (!profile || !profile.isProfileComplete) && !incompleteProfileDismissed && (
             <div className="mt-4 p-4 bg-yellow-100 border border-yellow-400 rounded-md relative">
               <button
-                onClick={() => setWarning('')}
+                onClick={() => setIncompleteProfileDismissed(true)}
                 className="absolute top-2 right-2 text-yellow-600 hover:text-yellow-800"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">

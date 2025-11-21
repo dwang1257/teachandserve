@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from '../../config/axios';
 
 const NotificationBanner = () => {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [dismissed, setDismissed] = useState([]);
 
@@ -18,7 +20,7 @@ const NotificationBanner = () => {
         const notification = {
           id: `match-${Date.now()}`,
           type: 'match',
-          message: `🎉 You've been matched with ${matches.length} potential ${response.data.userRole === 'MENTEE' ? 'mentor' : 'mentee'}${matches.length > 1 ? 's' : ''}!`,
+          message: `You've been matched with ${matches.length} potential ${response.data.userRole === 'MENTEE' ? 'mentor' : 'mentee'}${matches.length > 1 ? 's' : ''}!`,
           matches: matches
         };
         
@@ -59,7 +61,7 @@ const NotificationBanner = () => {
                 <div className="flex space-x-3">
                   <button
                     className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-                    onClick={() => window.location.href = '/dashboard'}
+                    onClick={() => navigate('/dashboard')}
                   >
                     View Matches
                   </button>

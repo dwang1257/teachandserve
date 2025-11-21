@@ -19,18 +19,21 @@ import java.util.Optional;
 @Service
 @Transactional
 public class ProfileService {
-    
+
     @Autowired
     private UserProfileRepository profileRepository;
-    
+
     @Autowired
     private UserRepository userRepository;
-    
+
     @Autowired
     private EmbeddingService embeddingService;
-    
+
     @Autowired
     private ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    private SanitizationService sanitizationService;
     
     public Optional<ProfileResponse> getProfileByUserId(Long userId) {
         Optional<UserProfile> profileOpt = profileRepository.findByUserId(userId);
@@ -94,30 +97,31 @@ public class ProfileService {
         
         UserProfile profile = profileRepository.findByUserId(userId)
                 .orElse(new UserProfile(user));
-        
-        // Update required fields for completion
-        profile.setBio(request.getBio());
-        profile.setInterests(request.getInterests());
-        profile.setGoals(request.getGoals());
-        
-        // Update optional fields if provided
+
+        // Update required fields for completion (with XSS sanitization)
+        profile.setBio(sanitizationService.sanitize(request.getBio()));
+        profile.setInterests(sanitizationService.sanitizePlainText(request.getInterests()));
+        profile.setGoals(sanitizationService.sanitize(request.getGoals()));
+
+        // Update optional fields if provided (with XSS sanitization)
         if (request.getSkills() != null) {
-            profile.setSkills(request.getSkills());
+            profile.setSkills(sanitizationService.sanitizePlainText(request.getSkills()));
         }
         if (request.getExperienceLevel() != null) {
-            profile.setExperienceLevel(request.getExperienceLevel());
+            profile.setExperienceLevel(sanitizationService.sanitizePlainText(request.getExperienceLevel()));
         }
         if (request.getLocation() != null) {
-            profile.setLocation(request.getLocation());
+            profile.setLocation(sanitizationService.sanitizePlainText(request.getLocation()));
         }
         if (request.getTimezone() != null) {
-            profile.setTimezone(request.getTimezone());
+            profile.setTimezone(sanitizationService.sanitizePlainText(request.getTimezone()));
         }
         if (request.getAvailability() != null) {
-            profile.setAvailability(request.getAvailability());
+            profile.setAvailability(sanitizationService.sanitizePlainText(request.getAvailability()));
         }
         if (request.getProfileImageUrl() != null) {
-            profile.setProfileImageUrl(request.getProfileImageUrl());
+            // URL validation should be added here for additional security
+            profile.setProfileImageUrl(sanitizationService.sanitizePlainText(request.getProfileImageUrl()));
         }
         
         // Mark profile as complete
@@ -143,8 +147,7 @@ public class ProfileService {
         try {
             eventPublisher.publishEvent(new ProfileCompletedEvent(this, userId));
         } catch (Exception e) {
-            // Log the error but don't fail the profile completion
-            System.err.println("Failed to publish profile completion event: " + e.getMessage());
+            // Silent failure - consider adding proper logging
         }
         
         return convertToResponse(profile);

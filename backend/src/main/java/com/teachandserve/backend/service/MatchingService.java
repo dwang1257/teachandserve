@@ -9,6 +9,8 @@ import com.teachandserve.backend.model.UserProfile;
 import com.teachandserve.backend.repository.MatchRepository;
 import com.teachandserve.backend.repository.UserProfileRepository;
 import com.teachandserve.backend.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,13 +21,15 @@ import java.util.stream.Collectors;
 
 @Service
 public class MatchingService {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(MatchingService.class);
+
     @Autowired
     private UserProfileRepository profileRepository;
-    
+
     @Autowired
     private MatchRepository matchRepository;
-    
+
     @Autowired
     private UserRepository userRepository;
     
@@ -211,7 +215,7 @@ public class MatchingService {
         match.setAcceptedAt(java.time.LocalDateTime.now());
         match = matchRepository.save(match);
 
-        System.out.println("Match " + matchId + " accepted by user " + userEmail);
+        log.info("Match {} accepted by user {}", matchId, userEmail);
 
         return convertToMatchResponse(match);
     }
@@ -237,7 +241,7 @@ public class MatchingService {
         match.setRejectedAt(java.time.LocalDateTime.now());
         match = matchRepository.save(match);
 
-        System.out.println("Match " + matchId + " rejected by user " + userEmail);
+        log.info("Match {} rejected by user {}", matchId, userEmail);
 
         return convertToMatchResponse(match);
     }

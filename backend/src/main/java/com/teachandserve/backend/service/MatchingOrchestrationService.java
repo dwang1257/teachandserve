@@ -7,6 +7,8 @@ import com.teachandserve.backend.model.Role;
 import com.teachandserve.backend.model.User;
 import com.teachandserve.backend.repository.MatchRepository;
 import com.teachandserve.backend.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -17,13 +19,15 @@ import java.util.List;
 @Service
 @Transactional
 public class MatchingOrchestrationService {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(MatchingOrchestrationService.class);
+
     @Autowired
     private MatchingService matchingService;
-    
+
     @Autowired
     private MatchRepository matchRepository;
-    
+
     @Autowired
     private UserRepository userRepository;
     
@@ -43,42 +47,43 @@ public class MatchingOrchestrationService {
                 triggerMentorMatching(userId);
             }
         } catch (Exception e) {
-            System.err.println("Failed to process profile completion event: " + e.getMessage());
+            log.error("Failed to process profile completion event for user {}", event.getUserId(), e);
         }
     }
     
     private void triggerMenteeMatching(Long menteeUserId) {
-        System.out.println("Triggering mentee matching for user ID: " + menteeUserId);
-        
+        log.info("Triggering mentee matching for user ID: {}", menteeUserId);
+
         // Find potential mentors for this mentee
         List<ProfileResponse> potentialMentors = matchingService.findMatchingMentors(menteeUserId, 5);
-        System.out.println("Found " + potentialMentors.size() + " potential mentors");
-        
+        log.info("Found {} potential mentors for mentee {}", potentialMentors.size(), menteeUserId);
+
         User menteeUser = userRepository.findById(menteeUserId).orElse(null);
         if (menteeUser == null) {
-            System.out.println("Mentee user not found");
+            log.warn("Mentee user not found: {}", menteeUserId);
             return;
         }
-        
+
         for (ProfileResponse mentorProfile : potentialMentors) {
-            System.out.println("Processing mentor: " + mentorProfile.getEmail());
-            
+            log.debug("Processing mentor: {}", mentorProfile.getEmail());
+
             // Check if match already exists
             if (!matchRepository.existsByMenteeIdAndMentorId(menteeUserId, mentorProfile.getUserId())) {
                 User mentorUser = userRepository.findById(mentorProfile.getUserId()).orElse(null);
                 if (mentorUser != null) {
                     // Calculate similarity score (you might want to get this from the matching algorithm)
                     double similarityScore = calculateSimilarityScore(menteeUserId, mentorProfile.getUserId());
-                    
+
                     Match match = new Match(menteeUser, mentorUser, similarityScore);
                     matchRepository.save(match);
-                    System.out.println("Created match between " + menteeUser.getEmail() + " and " + mentorUser.getEmail() + 
-                                     " with score: " + similarityScore);
+                    log.info("Created match between {} and {} with score: {}",
+                            menteeUser.getEmail(), mentorUser.getEmail(), similarityScore);
                 } else {
-                    System.out.println("Mentor user not found for ID: " + mentorProfile.getUserId());
+                    log.warn("Mentor user not found for ID: {}", mentorProfile.getUserId());
                 }
             } else {
-                System.out.println("Match already exists");
+                log.debug("Match already exists between mentee {} and mentor {}",
+                         menteeUserId, mentorProfile.getUserId());
             }
         }
     }

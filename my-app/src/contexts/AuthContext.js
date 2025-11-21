@@ -83,13 +83,11 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (email, password, role) => {
     try {
-      console.log('Attempting signup with:', { email, role });
-      const response = await axios.post('/api/auth/signup', { 
-        email, 
-        password, 
-        role 
+      const response = await axios.post('/api/auth/signup', {
+        email,
+        password,
+        role
       });
-      console.log('Signup response:', response.data);
       const { token, user } = response.data;
       
       localStorage.setItem('token', token);

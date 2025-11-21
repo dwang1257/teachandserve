@@ -9,7 +9,7 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-indigo-100 to-indigo-200">
       {/* Navigation */}
       <nav className="flex justify-between items-center px-8 py-6 bg-white/10 backdrop-blur-md border-b border-white/20">
         <div className="flex items-center space-x-3">
@@ -24,7 +24,7 @@ export default function LandingPage() {
           </Link>
           <Link
             to="/signup"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
           >
             Get Started
           </Link>
@@ -37,7 +37,7 @@ export default function LandingPage() {
           
           {/* Status Badge */}
           <div className="inline-block mb-12">
-            <span className="bg-white/95 text-blue-600 px-12 py-6 rounded-2xl font-bold text-2xl md:text-3xl border-3 border-blue-200 backdrop-blur-sm animate-pulse shadow-lg">
+            <span className="bg-white/95 text-indigo-600 px-12 py-6 rounded-2xl font-bold text-2xl md:text-3xl border-3 border-indigo-200 backdrop-blur-sm animate-pulse shadow-lg">
               Currently Building - Coming Soon!
             </span>
           </div>

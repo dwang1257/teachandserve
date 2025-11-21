@@ -69,7 +69,6 @@ public class RateLimitingService {
             return true;
         } catch (Exception e) {
             // Fail open - allow message if Redis is unavailable
-            System.err.println("Rate limiting check failed: " + e.getMessage());
             return true;
         }
     }

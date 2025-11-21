@@ -22,6 +22,7 @@ const Messages = () => {
   const [error, setError] = useState(null);
 
   const subscriptionsRef = useRef([]);
+  const markAsReadTimeoutRef = useRef(null);
 
   // Initialize WebSocket connection
   useEffect(() => {
@@ -30,7 +31,6 @@ const Messages = () => {
       websocketService.connect(
         token,
         () => {
-          console.log('WebSocket connected');
           setWsConnected(true);
           // Subscribe to user's conversation updates
           const subId = websocketService.subscribe(
@@ -50,6 +50,11 @@ const Messages = () => {
       // Cleanup subscriptions
       subscriptionsRef.current.forEach(id => websocketService.unsubscribe(id));
       subscriptionsRef.current = [];
+      // Clear any pending mark-as-read timeout
+      if (markAsReadTimeoutRef.current) {
+        clearTimeout(markAsReadTimeoutRef.current);
+        markAsReadTimeoutRef.current = null;
+      }
     };
   }, [user.id]);
 
@@ -123,11 +128,15 @@ const Messages = () => {
 
     // Mark as read if conversation is selected
     if (selectedConversation && selectedConversation.id === message.conversationId) {
+      // Clear any existing timeout to avoid multiple pending reads
+      if (markAsReadTimeoutRef.current) {
+        clearTimeout(markAsReadTimeoutRef.current);
+      }
       // Debounce read marking to avoid spamming server
-      const timeoutId = setTimeout(() => {
+      markAsReadTimeoutRef.current = setTimeout(() => {
          markAsRead();
+         markAsReadTimeoutRef.current = null;
       }, 1000);
-      return () => clearTimeout(timeoutId);
     }
   };
 
@@ -174,11 +183,9 @@ const Messages = () => {
           // If conversation doesn't exist, create it
           if (!targetConvo) {
             try {
-              console.log('Creating conversation with peerUserId:', targetUserId);
               const createResponse = await axios.post('/api/conversations', {
                 peerUserId: targetUserId
               });
-              console.log('Conversation created:', createResponse.data);
 
               // Use the created conversation directly instead of reloading
               targetConvo = createResponse.data;
@@ -248,14 +255,11 @@ const Messages = () => {
 
   const loadMessages = async (conversationId) => {
     try {
-      console.log('Loading messages for conversation:', conversationId);
       const response = await axios.get(`/api/conversations/${conversationId}`, {
         params: { limit: 50 }
       });
-      console.log('Messages response:', response.data);
 
       const messagesData = response.data.messages || [];
-      console.log('Messages data:', messagesData);
       // Reverse messages to show oldest first
       setMessages(messagesData.reverse());
       setShouldScroll(true);

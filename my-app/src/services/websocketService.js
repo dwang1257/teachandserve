@@ -30,7 +30,6 @@ class WebSocketService {
    */
   connect(token, onConnect, onError) {
     if (this.connected) {
-      console.log('WebSocket already connected');
       return;
     }
 
@@ -48,7 +47,6 @@ class WebSocketService {
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       onConnect: () => {
-        console.log('WebSocket connected');
         this.connected = true;
         this.reconnectAttempts = 0;
         if (onConnect) onConnect();
@@ -64,7 +62,6 @@ class WebSocketService {
         if (onError) onError(event);
       },
       onDisconnect: () => {
-        console.log('WebSocket disconnected');
         this.connected = false;
         this.handleReconnect();
       }
@@ -84,7 +81,6 @@ class WebSocketService {
 
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts);
-    console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
 
     setTimeout(() => {
       if (!this.connected && this.token) {
@@ -119,7 +115,6 @@ class WebSocketService {
     const subscriptionId = subscription.id;
     this.subscriptions[subscriptionId] = subscription;
 
-    console.log(`Subscribed to ${topic} with ID ${subscriptionId}`);
     return subscriptionId;
   }
 
@@ -132,7 +127,6 @@ class WebSocketService {
     if (this.subscriptions[subscriptionId]) {
       this.subscriptions[subscriptionId].unsubscribe();
       delete this.subscriptions[subscriptionId];
-      console.log(`Unsubscribed from ${subscriptionId}`);
     }
   }
 
@@ -168,7 +162,6 @@ class WebSocketService {
       this.client.deactivate();
       this.connected = false;
       this.subscriptions = {};
-      console.log('WebSocket disconnected');
     }
   }
 

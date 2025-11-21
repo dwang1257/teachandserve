@@ -294,13 +294,13 @@ const ProfileSetup = () => {
                   {formData.skills.map((skill, index) => (
                     <span
                       key={index}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-indigo-100 text-indigo-800"
                     >
                       {skill}
                       <button
                         type="button"
                         onClick={() => removeFromList('skills', index)}
-                        className="ml-2 text-blue-600 hover:text-blue-800"
+                        className="ml-2 text-indigo-600 hover:text-indigo-800"
                       >
                         ×
                       </button>

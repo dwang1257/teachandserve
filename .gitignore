@@ -1,3 +1,11 @@
+# Claude Code documentation (personal development aid)
+CLAUDE.md
+ed-doc.txt
+ui-fixes-doc.txt
+
+# Windows invalid filenames
+nul
+
 # Application properties files (environment-specific configurations)
 application.properties
 application-prod.properties
@@ -20,6 +28,9 @@ build/
 # Dependencies
 node_modules/
 .gradle/
+
+# Redis
+dump.rdb
 
 # Environment files
 .env

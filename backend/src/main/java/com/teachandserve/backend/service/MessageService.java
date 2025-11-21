@@ -31,6 +31,7 @@ public class MessageService {
     private final SimpMessagingTemplate messagingTemplate;
     private final RateLimitingService rateLimitingService;
     private final EncryptionService encryptionService;
+    private final SanitizationService sanitizationService;
 
     public MessageService(MessageRepository messageRepository,
                          ConversationRepository conversationRepository,
@@ -39,7 +40,8 @@ public class MessageService {
                          ConversationService conversationService,
                          SimpMessagingTemplate messagingTemplate,
                          RateLimitingService rateLimitingService,
-                         EncryptionService encryptionService) {
+                         EncryptionService encryptionService,
+                         SanitizationService sanitizationService) {
         this.messageRepository = messageRepository;
         this.conversationRepository = conversationRepository;
         this.userRepository = userRepository;
@@ -48,6 +50,7 @@ public class MessageService {
         this.messagingTemplate = messagingTemplate;
         this.rateLimitingService = rateLimitingService;
         this.encryptionService = encryptionService;
+        this.sanitizationService = sanitizationService;
     }
 
     /**
@@ -88,8 +91,11 @@ public class MessageService {
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new RuntimeException("Sender not found"));
 
-        // 3. Encrypt message body
-        String encryptedBody = encryptionService.encrypt(body, conversationId);
+        // 3. Sanitize message body to prevent XSS
+        String sanitizedBody = sanitizationService.sanitize(body);
+
+        // 4. Encrypt sanitized message body
+        String encryptedBody = encryptionService.encrypt(sanitizedBody, conversationId);
 
         // Create and save message with encrypted content
         Message message = new Message(conversation, sender, encryptedBody);
@@ -155,7 +161,6 @@ public class MessageService {
             decryptedBody = encryptionService.decrypt(dto.getBody(), conversationId);
         } catch (Exception e) {
             decryptedBody = "[Decryption failed]";
-            System.err.println("Failed to decrypt message " + dto.getId() + ": " + e.getMessage());
         }
 
         return new MessageResponse(
@@ -264,30 +269,6 @@ public class MessageService {
                 .map(receipt -> receipt.getUser().getId())
                 .collect(Collectors.toList());
 
-        String body = message.getBody();
-        if (!isNewMessage) {
-             try {
-                body = encryptionService.decrypt(body, conversationId);
-            } catch (Exception e) {
-                body = "[Decryption failed]";
-            }
-        }
-        // If isNewMessage is true, we assume the caller already passed the decrypted body during creation 
-        // BUT actually, the caller passes the encrypted body to save(), so we need to decrypt it unless we pass the original body separately.
-        // Wait, sendMessage() encrypts it before saving. So message.getBody() IS encrypted.
-        // So we ALWAYS need to decrypt it unless we pass the original string down.
-        // Let's simplify: sendMessage already has the plain text body. 
-        // But here we are converting the saved entity.
-        
-        // Correction: In sendMessage, we call toMessageResponse(message, conversationId).
-        // If we want to avoid double decryption in sendMessage, we should probably just construct the response manually there
-        // OR allow this method to take the plain body as an override.
-        
-        // For now, let's stick to safe decryption to ensure what we return matches what's in DB.
-        // Actually, the previous implementation of sendMessage did:
-        // String decryptedBody = encryptionService.decrypt(encryptedBody, conversationId);
-        // So let's just use decryption here to be safe and consistent.
-        
         String decryptedBody;
         try {
             decryptedBody = encryptionService.decrypt(message.getBody(), conversationId);

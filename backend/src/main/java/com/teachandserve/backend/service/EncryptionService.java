@@ -1,15 +1,22 @@
 package com.teachandserve.backend.service;
 
 import org.apache.commons.codec.binary.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 
 /**
  * Service for message encryption/decryption using AES-256-GCM.
@@ -22,15 +29,22 @@ import java.security.SecureRandom;
 @Service
 public class EncryptionService {
 
+    private static final Logger log = LoggerFactory.getLogger(EncryptionService.class);
+
     @Value("${encryption.algorithm:AES}")
     private String algorithm;
 
     @Value("${encryption.key.size:256}")
     private int keySize;
 
+    @Value("${encryption.master.secret:changeThisInProduction}")
+    private String masterSecret;
+
     private static final String CIPHER_MODE = "AES";
     private static final int GCM_IV_LENGTH = 12; // 96 bits
     private static final int GCM_TAG_LENGTH = 16; // 128 bits
+    private static final int PBKDF2_ITERATIONS = 100000; // OWASP recommended minimum
+    private static final String PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA256";
 
     /**
      * Encrypt a message using AES encryption.
@@ -75,25 +89,38 @@ public class EncryptionService {
     }
 
     /**
-     * Derive a deterministic encryption key from conversation ID.
-     * This ensures the same conversation always uses the same key.
+     * Derive a deterministic encryption key from conversation ID using PBKDF2.
+     * This ensures the same conversation always uses the same key with strong cryptography.
+     *
+     * Uses PBKDF2-HMAC-SHA256 with 100,000 iterations (OWASP recommended minimum).
      *
      * @param conversationId Conversation ID
      * @return SecretKey for encryption/decryption
      */
     private SecretKey deriveKey(Long conversationId) {
         try {
-            // Create a deterministic key from conversation ID
-            // In production, consider using PBKDF2 or similar KDF
-            String keyString = String.format("%064d", conversationId);
-            byte[] keyBytes = keyString.getBytes();
+            // Use conversation ID as the "password" for PBKDF2
+            // In a real system, combine this with a master secret
+            String password = masterSecret + ":" + conversationId;
 
-            // Ensure key is exactly 32 bytes for AES-256
-            byte[] finalKeyBytes = new byte[32];
-            System.arraycopy(keyBytes, 0, finalKeyBytes, 0, Math.min(keyBytes.length, 32));
+            // Use conversation ID as salt (deterministic per conversation)
+            // In production, consider using a longer, more complex salt
+            byte[] salt = String.valueOf(conversationId).getBytes(StandardCharsets.UTF_8);
 
-            return new SecretKeySpec(finalKeyBytes, 0, 32, CIPHER_MODE);
-        } catch (Exception e) {
+            // Derive key using PBKDF2
+            KeySpec spec = new PBEKeySpec(
+                password.toCharArray(),
+                salt,
+                PBKDF2_ITERATIONS,
+                keySize
+            );
+
+            SecretKeyFactory factory = SecretKeyFactory.getInstance(PBKDF2_ALGORITHM);
+            byte[] keyBytes = factory.generateSecret(spec).getEncoded();
+
+            return new SecretKeySpec(keyBytes, CIPHER_MODE);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            log.error("Key derivation failed for conversation {}", conversationId, e);
             throw new RuntimeException("Key derivation failed: " + e.getMessage(), e);
         }
     }

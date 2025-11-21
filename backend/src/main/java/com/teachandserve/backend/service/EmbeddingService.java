@@ -72,7 +72,6 @@ public class EmbeddingService {
             try {
                 return callOpenAIEmbeddingAPI(text);
             } catch (Exception e) {
-                System.err.println("OpenAI failed, using mock embedding: " + e.getMessage());
                 return generateMockEmbedding(text);
             }
         } else {
